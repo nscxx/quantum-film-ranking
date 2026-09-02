@@ -3,16 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { SubmitEvent } from 'react';
 import {
-  Activity,
   ArrowUpRight,
   CheckCircle2,
   KeyRound,
-  LogOut,
-  MapPinned,
   RotateCcw,
   ShieldCheck,
   Sparkles,
-  Trophy,
   Zap,
 } from 'lucide-react';
 import { PACKAGE_RULES, PROVINCES } from '@/lib/order-race/config';
@@ -22,13 +18,50 @@ import {
   fetchControlSession,
   fetchRanking,
   loginControl,
-  logoutControl,
   recordScore,
   revokeScore,
 } from '@/lib/order-race/api-client';
 import type { RankingSnapshot } from '@/lib/order-race/types';
 
 type Notice = { tone: 'success' | 'error' | 'info'; message: string };
+
+const PROVINCE_SORT_KEYS: Record<ProvinceCode, string> = {
+  '110000': 'beijing',
+  '120000': 'tianjin',
+  '130000': 'hebei',
+  '140000': 'shanxi',
+  '150000': 'neimenggu',
+  '210000': 'liaoning',
+  '220000': 'jilin',
+  '230000': 'heilongjiang',
+  '310000': 'shanghai',
+  '320000': 'jiangsu',
+  '330000': 'zhejiang',
+  '340000': 'anhui',
+  '350000': 'fujian',
+  '360000': 'jiangxi',
+  '370000': 'shandong',
+  '410000': 'henan',
+  '420000': 'hubei',
+  '430000': 'hunan',
+  '440000': 'guangdong',
+  '450000': 'guangxi',
+  '460000': 'hainan',
+  '500000': 'chongqing',
+  '510000': 'sichuan',
+  '520000': 'guizhou',
+  '530000': 'yunnan',
+  '540000': 'xizang',
+  '610000': 'shaanxi',
+  '620000': 'gansu',
+  '630000': 'qinghai',
+  '640000': 'ningxia',
+  '650000': 'xinjiang',
+};
+
+const PROVINCE_OPTIONS = [...PROVINCES].sort((a, b) =>
+  PROVINCE_SORT_KEYS[a.code].localeCompare(PROVINCE_SORT_KEYS[b.code]),
+);
 
 function formatTime(value: string) {
   const normalized = value.includes('T') ? value : `${value.replace(' ', 'T')}Z`;
@@ -44,7 +77,7 @@ export function ControlPanel() {
   const [password, setPassword] = useState('');
   const [provinceCode, setProvinceCode] = useState<ProvinceCode>(PROVINCES[0].code);
   const [packageCode, setPackageCode] = useState<PackageCode>('A');
-  const [loading, setLoading] = useState<'login' | 'entry' | 'revoke' | 'logout' | null>(null);
+  const [loading, setLoading] = useState<'login' | 'entry' | 'revoke' | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
 
   const refresh = useCallback(async () => {
@@ -135,17 +168,6 @@ export function ControlPanel() {
     }
   }
 
-  async function logout() {
-    setLoading('logout');
-    try {
-      await logoutControl();
-      setAuthenticated(false);
-      setNotice(null);
-    } finally {
-      setLoading(null);
-    }
-  }
-
   if (authenticated === null) {
     return <main className="score-control-shell"><div className="score-control-loading"><Sparkles /> 正在连接积分系统</div></main>;
   }
@@ -175,18 +197,7 @@ export function ControlPanel() {
       <div className="score-control-container">
         <header className="score-control-header">
           <div><span><Zap fill="currentColor" /></span><p>量子膜积分控制台<small>省份 × 套餐加权积分</small></p></div>
-          <nav>
-            <a href="/" target="_blank" rel="noreferrer">打开大屏 <ArrowUpRight /></a>
-            <button disabled={loading === 'logout'} onClick={() => void logout()}><LogOut /> 退出</button>
-          </nav>
         </header>
-
-        <section className="score-control-summary">
-          <article><Activity /><span>实时总积分</span><strong>{(snapshot?.stats.totalScore ?? 0).toLocaleString()}</strong></article>
-          <article><MapPinned /><span>已有积分省份</span><strong>{snapshot?.stats.activeProvinceCount ?? 0}<small>/31</small></strong></article>
-          <article><Trophy /><span>当前领先</span><strong>{snapshot?.stats.leaderName ?? '等待录入'}</strong></article>
-          {snapshot?.packages.map((item) => <article key={item.code}><b>{item.code}</b><span>{item.title}积分</span><strong>{item.score.toLocaleString()}</strong></article>)}
-        </section>
 
         {notice && <div className={`score-control-notice ${notice.tone}`}>{notice.tone === 'success' && <CheckCircle2 />}{notice.message}</div>}
 
@@ -196,7 +207,11 @@ export function ControlPanel() {
             <form onSubmit={submitEntry}>
               <label htmlFor="province-select">选择省份</label>
               <select id="province-select" value={provinceCode} onChange={(event) => setProvinceCode(event.target.value as ProvinceCode)}>
-                {PROVINCES.map((province) => <option key={province.code} value={province.code}>{province.name}</option>)}
+                {PROVINCE_OPTIONS.map((province) => (
+                  <option key={province.code} value={province.code}>
+                    {PROVINCE_SORT_KEYS[province.code][0].toUpperCase()} · {province.name}
+                  </option>
+                ))}
               </select>
 
               <fieldset>
