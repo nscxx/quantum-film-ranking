@@ -136,7 +136,7 @@ export function createScreenAudio(): ScreenAudio {
       }
     },
     restoreBgm() {
-      if (anySfxPlaying()) return;
+      stopSfx();
       ducked = false;
       applyVolumes();
     },

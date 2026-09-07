@@ -295,7 +295,7 @@ export function BigScreen({ preview = false }: { preview?: boolean }) {
           const id = crypto.randomUUID();
           const events = expandDisplayEvent({ id, submissionId: id, cursor: 0, provinceCode: '440000', provinceName: type === 'bigCustomer' ? '杭州保通科技实业有限公司' : '广东省', packageSummary: 'A×2 · B×3', totalPoints: 770, scoreBefore: 630, scoreAfter: 1400, rankBefore: 4, rankAfter: 1, milestone: 1400, createdAt: new Date().toISOString(), eventKind: type === 'bigCustomer' ? 'bigCustomer' : 'score' });
           setCelebrations(type === 'all' ? events : events.filter((event) => event.type === type));
-        }}>{['加分 · 2秒', '阶段 · 3秒', '前三 · 5秒', '冠军 · 20秒', '大客户 · 8秒', '完整连播'][index]}</button>)}
+        }}>{['加分 · 2秒', '阶段 · 5秒', '前三 · 6秒', '冠军 · 20秒', '大客户 · 8秒', '完整连播'][index]}</button>)}
       </div>}
       <div className="quantum-stage">
         <ScreenAsset name="bg-circuit" className="quantum-bg-circuit" alt="" />
