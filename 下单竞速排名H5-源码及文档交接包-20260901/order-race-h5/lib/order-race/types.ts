@@ -55,9 +55,10 @@ export type DisplayEvent = {
   rankAfter: number;
   milestone: number | null;
   createdAt: string;
+  eventKind?: 'score' | 'bigCustomer';
 };
 
-export type CelebrationType = 'score' | 'milestone' | 'top3' | 'champion';
+export type CelebrationType = 'score' | 'milestone' | 'top3' | 'champion' | 'bigCustomer';
 
 export type CelebrationEvent = DisplayEvent & {
   celebrationId: string;

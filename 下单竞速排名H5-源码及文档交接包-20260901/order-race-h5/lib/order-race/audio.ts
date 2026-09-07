@@ -12,6 +12,7 @@ export const AUDIO_TRACKS = {
   milestone: '/audio/milestone.mp3',
   top3: '/audio/top-three.mp3',
   champion: '/audio/champion.mp3',
+  bigCustomer: '/audio/big-customer.mp3',
 } as const;
 
 const BGM_VOLUME = 0.32;
@@ -40,6 +41,7 @@ export function createScreenAudio(): ScreenAudio {
     milestone: makeAudio(AUDIO_TRACKS.milestone),
     top3: makeAudio(AUDIO_TRACKS.top3),
     champion: makeAudio(AUDIO_TRACKS.champion),
+    bigCustomer: makeAudio(AUDIO_TRACKS.bigCustomer),
   };
   let muted = false;
   let ducked = false;

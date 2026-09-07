@@ -177,12 +177,13 @@ function toSubmission(row: SubmissionRow, items: ItemRow[]): ScoreSubmission | n
 function toDisplayEvent(row: DisplayEventRow): DisplayEvent | null {
   const province = getProvince(row.provinceCode);
   if (!province) return null;
+  const isBigCustomer = row.packageSummary === '__BIG_CUSTOMER__';
   return {
     cursor: Number(row.cursor),
     id: row.id,
     submissionId: row.submissionId,
     provinceCode: province.code,
-    provinceName: province.name,
+    provinceName: isBigCustomer ? '杭州保通科技实业有限公司' : province.name,
     packageSummary: row.packageSummary,
     totalPoints: Number(row.totalPoints),
     scoreBefore: Number(row.scoreBefore),
@@ -191,7 +192,20 @@ function toDisplayEvent(row: DisplayEventRow): DisplayEvent | null {
     rankAfter: Number(row.rankAfter),
     milestone: row.milestone === null ? null : Number(row.milestone),
     createdAt: row.createdAt,
+    eventKind: isBigCustomer ? 'bigCustomer' : 'score',
   };
+}
+
+export async function triggerBigCustomerCelebration() {
+  await ensureOrderRaceSchema();
+  const id = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
+  await getD1().prepare(`INSERT INTO display_events
+    (id, submission_id, province_code, package_summary, total_points, score_before,
+     score_after, rank_before, rank_after, milestone, created_at)
+    VALUES (?, ?, ?, ?, 0, 0, 0, 0, 0, NULL, ?)`)
+    .bind(id, `special:${id}`, '330000', '__BIG_CUSTOMER__', createdAt).run();
+  return { id, createdAt };
 }
 
 async function getPackageRuleRows() {

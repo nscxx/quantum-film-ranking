@@ -9,6 +9,7 @@ import type { CelebrationEvent } from '@/lib/order-race/types';
 import { MilestoneCelebration } from './milestone-celebration';
 import { TopThreeCelebration, preloadTopThree } from './top3-celebration';
 import { ChampionCelebration, preloadChampion } from './champion-celebration';
+import { BigCustomerCelebration } from './big-customer-celebration';
 
 function CountUp({ value, duration = 900 }: { value: number; duration?: number }) {
   const [display, setDisplay] = useState(0);
@@ -31,15 +32,18 @@ export function CelebrationLayer({
   queueLength,
   started,
   onStarted,
+  onActiveReady,
 }: {
   active: CelebrationEvent | null;
   queueLength: number;
   started: boolean;
   onStarted: () => void;
+  onActiveReady: (celebrationId: string) => void;
 }) {
   const engineRef = useRef<ScreenAudio | null>(null);
   const [muted, setMuted] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
+  const [visualReadyId, setVisualReadyId] = useState<string | null>(null);
 
   useEffect(() => { void preloadTopThree().catch(() => undefined); }, []);
   useEffect(() => { void preloadChampion().catch(() => undefined); }, []);
@@ -56,13 +60,26 @@ export function CelebrationLayer({
   useEffect(() => {
     const engine = engineRef.current;
     if (!engine || !audioReady) return;
-    if (active) {
+    if (active && (active.type !== 'champion' || visualReadyId === active.celebrationId)) {
       engine.playCelebration(active.type, active.type === 'champion'
         ? { loops: CHAMPION_LOOPS, everyMs: active.durationMs * CHAMPION_PLAY_RATIO / CHAMPION_LOOPS }
         : undefined);
     }
     else engine.restoreBgm();
-  }, [active, audioReady]);
+  }, [active, audioReady, visualReadyId]);
+
+  useEffect(() => {
+    if (!active) return;
+    if (active.type !== 'champion') {
+      onActiveReady(active.celebrationId);
+    }
+  }, [active, onActiveReady]);
+
+  function markChampionReady() {
+    if (!active || active.type !== 'champion') return;
+    setVisualReadyId(active.celebrationId);
+    onActiveReady(active.celebrationId);
+  }
 
   async function start() {
     try {
@@ -106,7 +123,7 @@ export function CelebrationLayer({
       )}
       {started && active && (
         <output className={`quantum-celebration type-${active.type}`} style={active.type !== 'score' ? { inset: 0 } : undefined} key={active.celebrationId} aria-live="polite">
-          {active.type === 'milestone' ? <MilestoneCelebration event={active} /> : active.type === 'top3' ? <TopThreeCelebration event={active} /> : active.type === 'champion' ? <ChampionCelebration event={active} /> : <>
+          {active.type === 'bigCustomer' ? <BigCustomerCelebration event={active} /> : active.type === 'milestone' ? <MilestoneCelebration event={active} /> : active.type === 'top3' ? <TopThreeCelebration event={active} /> : active.type === 'champion' ? <ChampionCelebration event={active} onReady={markChampionReady} /> : <>
           <div className="quantum-celebration-vignette" />
           <div className="quantum-energy-beam" />
           <div className="quantum-energy-orbit orbit-a" />

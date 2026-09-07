@@ -11,9 +11,16 @@ const CELEBRATION_DURATIONS = {
   milestone: 3000,
   top3: 5000,
   champion: CHAMPION_DURATION_MS,
+  bigCustomer: 8000,
 } as const;
 
 export function expandDisplayEvent(event: DisplayEvent): CelebrationEvent[] {
+  if (event.eventKind === 'bigCustomer') return [{
+    ...event,
+    celebrationId: `${event.id}:bigCustomer`,
+    type: 'bigCustomer',
+    durationMs: CELEBRATION_DURATIONS.bigCustomer,
+  }];
   const celebrations: CelebrationEvent[] = [{
     ...event,
     celebrationId: `${event.id}:score`,

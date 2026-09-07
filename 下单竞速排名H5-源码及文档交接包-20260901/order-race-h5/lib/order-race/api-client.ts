@@ -76,6 +76,12 @@ export function savePackagePoints(packageCode: PackageCode, points: number) {
   );
 }
 
+export function triggerBigCustomerCelebration() {
+  return requestJson<{ ok: true; eventId: string; createdAt: string }>('/api/control/big-customer', {
+    method: 'POST',
+  });
+}
+
 function fileNameFromDisposition(value: string | null) {
   if (!value) return '量子膜积分导出.xls';
   const utf8 = value.match(/filename\*=UTF-8''([^;]+)/i);

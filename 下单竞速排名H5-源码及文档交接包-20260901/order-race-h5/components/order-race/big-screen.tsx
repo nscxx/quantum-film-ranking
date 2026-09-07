@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Activity, ClipboardList, Crown, Package, Users } from 'lucide-react';
 import { ChinaScoreMap } from '@/components/order-race/china-score-map';
 import { CelebrationLayer } from '@/components/order-race/celebration-layer';
@@ -212,17 +212,22 @@ export function BigScreen({ preview = false }: { preview?: boolean }) {
   const [connected, setConnected] = useState(false);
   const [celebrations, setCelebrations] = useState<CelebrationEvent[]>([]);
   const [experienceStarted, setExperienceStarted] = useState(false);
+  const [readyCelebrationId, setReadyCelebrationId] = useState<string | null>(null);
   const displayCursor = useRef<number | null>(null);
 
   const activeCelebration = celebrations[0] ?? null;
 
   useEffect(() => {
-    if (!experienceStarted || !activeCelebration) return;
+    if (!experienceStarted || !activeCelebration || readyCelebrationId !== activeCelebration.celebrationId) return;
     const timer = window.setTimeout(() => {
       setCelebrations((current) => current[0]?.celebrationId === activeCelebration.celebrationId ? current.slice(1) : current);
     }, activeCelebration.durationMs);
     return () => window.clearTimeout(timer);
-  }, [activeCelebration, experienceStarted]);
+  }, [activeCelebration, experienceStarted, readyCelebrationId]);
+
+  const markCelebrationReady = useCallback((celebrationId: string) => {
+    setReadyCelebrationId(celebrationId);
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -286,11 +291,11 @@ export function BigScreen({ preview = false }: { preview?: boolean }) {
       {preview && <div style={{ position: 'fixed', zIndex: 500, top: 12, left: 12, padding: 12, background: '#07152f', color: 'white', border: '1px solid #70eaf5', borderRadius: 8 }}>
         <strong>动效与声音验收 · 不录入积分</strong>
         <p style={{ margin: '6px 0' }}>先点击大屏启动按钮，再选择效果。会播放正式 BGM 与对应庆祝音效。</p>
-        {(['score', 'milestone', 'top3', 'champion', 'all'] as const).map((type, index) => <button key={type} disabled={!experienceStarted || celebrations.length > 0} style={{ marginRight: 8, padding: 8, borderRadius: 4, background: '#70eaf5', color: '#07152f', opacity: !experienceStarted || celebrations.length > 0 ? .4 : 1 }} onClick={() => {
+        {(['score', 'milestone', 'top3', 'champion', 'bigCustomer', 'all'] as const).map((type, index) => <button key={type} disabled={!experienceStarted || celebrations.length > 0} style={{ marginRight: 8, padding: 8, borderRadius: 4, background: type === 'bigCustomer' ? '#f3c453' : '#70eaf5', color: '#07152f', opacity: !experienceStarted || celebrations.length > 0 ? .4 : 1 }} onClick={() => {
           const id = crypto.randomUUID();
-          const events = expandDisplayEvent({ id, submissionId: id, cursor: 0, provinceCode: '440000', provinceName: '广东省', packageSummary: 'A×2 · B×3', totalPoints: 770, scoreBefore: 630, scoreAfter: 1400, rankBefore: 4, rankAfter: 1, milestone: 1400, createdAt: new Date().toISOString() });
+          const events = expandDisplayEvent({ id, submissionId: id, cursor: 0, provinceCode: '440000', provinceName: type === 'bigCustomer' ? '杭州保通科技实业有限公司' : '广东省', packageSummary: 'A×2 · B×3', totalPoints: 770, scoreBefore: 630, scoreAfter: 1400, rankBefore: 4, rankAfter: 1, milestone: 1400, createdAt: new Date().toISOString(), eventKind: type === 'bigCustomer' ? 'bigCustomer' : 'score' });
           setCelebrations(type === 'all' ? events : events.filter((event) => event.type === type));
-        }}>{['加分 · 2秒', '阶段 · 3秒', '前三 · 5秒', '冠军 · 8秒', '完整连播 · 18秒'][index]}</button>)}
+        }}>{['加分 · 2秒', '阶段 · 3秒', '前三 · 5秒', '冠军 · 20秒', '大客户 · 8秒', '完整连播'][index]}</button>)}
       </div>}
       <div className="quantum-stage">
         <ScreenAsset name="bg-circuit" className="quantum-bg-circuit" alt="" />
@@ -410,6 +415,7 @@ export function BigScreen({ preview = false }: { preview?: boolean }) {
           queueLength={celebrations.length}
           started={experienceStarted}
           onStarted={() => setExperienceStarted(true)}
+          onActiveReady={markCelebrationReady}
         />
       </div>
     </main>

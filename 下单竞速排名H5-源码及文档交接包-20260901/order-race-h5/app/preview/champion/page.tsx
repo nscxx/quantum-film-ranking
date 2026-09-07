@@ -6,7 +6,8 @@ import { CHAMPION_DURATION_MS } from '@/lib/order-race/celebrations';
 import styles from './preview.module.css';
 
 const chapters = [
-  { name: '金龙入场', time: .04 }, { name: '冠军揭晓', time: .16 },
+  { name: '金龙入场', time: .04 }, { name: '数字登场', time: .07 },
+  { name: '加冕飞入', time: .12 }, { name: '冠军揭晓', time: .16 },
   { name: '第二圈', time: .42 }, { name: '金光定格', time: .8 },
 ];
 

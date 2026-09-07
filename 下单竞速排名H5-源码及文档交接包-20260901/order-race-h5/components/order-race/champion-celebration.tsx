@@ -11,20 +11,16 @@ const VIDEO_SRC = '/video/champion-dragon.mp4';
 const CITY_SRC = '/lottie/champion/city.png';
 const VIDEO_SECONDS = 8.042;
 
-let assetsPromise: Promise<void> | undefined;
+type ChampionAssets = { videoUrl: string };
+
+let assetsPromise: Promise<ChampionAssets> | undefined;
 
 export function preloadChampion() {
   if (!assetsPromise) {
-    assetsPromise = Promise.all([
-      new Promise<void>((resolve, reject) => {
-        const video = document.createElement('video');
-        video.preload = 'auto';
-        video.muted = true;
-        video.playsInline = true;
-        video.src = VIDEO_SRC;
-        video.addEventListener('canplaythrough', () => resolve(), { once: true });
-        video.addEventListener('error', () => reject(new Error('Champion video failed to load')), { once: true });
-        video.load();
+    const loadAssets = Promise.all([
+      fetch(VIDEO_SRC, { cache: 'force-cache' }).then(async response => {
+        if (!response.ok) throw new Error(`Champion video failed to load: ${response.status}`);
+        return URL.createObjectURL(await response.blob());
       }),
       new Promise<void>((resolve, reject) => {
         const image = new Image();
@@ -32,7 +28,11 @@ export function preloadChampion() {
         image.onerror = () => reject(new Error('Champion city failed to load'));
         image.src = CITY_SRC;
       }),
-    ]).then(() => undefined).catch(error => {
+    ]).then(([videoUrl]) => ({ videoUrl }));
+    const timeout = new Promise<ChampionAssets>((_, reject) => {
+      window.setTimeout(() => reject(new Error('Champion assets timed out')), 15000);
+    });
+    assetsPromise = Promise.race([loadAssets, timeout]).catch(error => {
       assetsPromise = undefined;
       throw error;
     });
@@ -40,19 +40,22 @@ export function preloadChampion() {
   return assetsPromise;
 }
 
-export function ChampionCelebration({ event, hold = false, seek, onProgress }: {
-  event: ChampionEvent; hold?: boolean; seek?: number; onProgress?: (progress: number) => void;
+export function ChampionCelebration({ event, hold = false, seek, onProgress, onReady }: {
+  event: ChampionEvent; hold?: boolean; seek?: number; onProgress?: (progress: number) => void; onReady?: () => void;
 }) {
   const root = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const currentSeek = useRef(seek);
   const progressCallback = useRef(onProgress);
+  const readyCallback = useRef(onReady);
   const [failed, setFailed] = useState(false);
   useEffect(() => { currentSeek.current = seek; }, [seek]);
   useEffect(() => { progressCallback.current = onProgress; }, [onProgress]);
+  useEffect(() => { readyCallback.current = onReady; }, [onReady]);
 
   useEffect(() => {
-    let disposed = false, raf = 0, startedAt = 0, lastReported = -1, lastSeek = -1;
+    let disposed = false, raf = 0, startedAt = 0, lastReported = -1, lastSeek = -1, ready = false;
+    let loadTimer = 0;
     const typography: Animation[] = [];
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     const video = videoRef.current;
@@ -106,22 +109,43 @@ export function ChampionCelebration({ event, hold = false, seek, onProgress }: {
       if (hold || (!reduced.matches && progress < 1)) raf = requestAnimationFrame(tick);
     };
     const start = () => {
-      if (disposed || !root.current) return;
+      if (disposed || ready || !root.current) return;
+      ready = true;
+      window.clearTimeout(loadTimer);
       root.current.dataset.ready = 'true';
       typography.push(...root.current.getAnimations({ subtree: true }));
       typography.forEach(item => item.pause());
       startedAt = performance.now();
       apply(reduced.matches ? .82 : (currentSeek.current ?? 0));
+      readyCallback.current?.();
       raf = requestAnimationFrame(tick);
     };
-    void preloadChampion().then(() => {
+    const fail = () => {
+      if (disposed || ready) return;
+      ready = true;
+      window.clearTimeout(loadTimer);
+      setFailed(true);
+      readyCallback.current?.();
+    };
+    video?.addEventListener('error', fail, { once: true });
+    void preloadChampion().then(({ videoUrl }) => {
       if (disposed || !video) return;
+      video.src = videoUrl;
+      video.load();
       if (video.readyState >= 2) start();
-      else video.addEventListener('loadeddata', start, { once: true });
-    }).catch(() => { if (!disposed) setFailed(true); });
+      else {
+        video.addEventListener('loadeddata', start, { once: true });
+        video.addEventListener('canplay', start, { once: true });
+        loadTimer = window.setTimeout(fail, 8000);
+      }
+    }).catch(fail);
     return () => {
       disposed = true;
+      window.clearTimeout(loadTimer);
       cancelAnimationFrame(raf);
+      video?.removeEventListener('error', fail);
+      video?.removeEventListener('loadeddata', start);
+      video?.removeEventListener('canplay', start);
       video?.pause();
     };
   }, [event.durationMs, hold]);
@@ -131,7 +155,7 @@ export function ChampionCelebration({ event, hold = false, seek, onProgress }: {
     aria-label={title + '，夺得量子膜订单总榜第一名'}>
     <div className={styles.frame}>
       <div className={styles.scene}>
-        <video ref={videoRef} className={styles.dragon} src={VIDEO_SRC} muted playsInline preload="auto"
+        <video ref={videoRef} className={styles.dragon} muted playsInline preload="auto"
           disablePictureInPicture disableRemotePlayback aria-hidden="true" />
         <div className={styles.aura} aria-hidden="true" />
         <div className={styles.mark} aria-hidden="true">

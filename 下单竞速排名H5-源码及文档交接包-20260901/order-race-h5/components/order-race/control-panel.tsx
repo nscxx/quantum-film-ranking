@@ -14,6 +14,7 @@ import {
   Settings2,
   ShieldCheck,
   Sparkles,
+  Star,
   Zap,
 } from 'lucide-react';
 import { PACKAGE_RULES, PROVINCES } from '@/lib/order-race/config';
@@ -27,6 +28,7 @@ import {
   recordScore,
   revokeScore,
   savePackagePoints,
+  triggerBigCustomerCelebration,
 } from '@/lib/order-race/api-client';
 import type { RankingSnapshot } from '@/lib/order-race/types';
 
@@ -69,7 +71,7 @@ export function ControlPanel() {
     B: String(PACKAGE_RULES[1].points),
     C: String(PACKAGE_RULES[2].points),
   });
-  const [loading, setLoading] = useState<'login' | 'entry' | 'revoke' | 'package' | 'export' | null>(null);
+  const [loading, setLoading] = useState<'login' | 'entry' | 'revoke' | 'package' | 'export' | 'bigCustomer' | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
 
   const refresh = useCallback(async () => {
@@ -198,6 +200,18 @@ export function ControlPanel() {
     } finally { setLoading(null); }
   }
 
+  async function launchBigCustomer() {
+    if (!window.confirm('确认在现场大屏播放“杭州保通科技实业有限公司”大客户订单特效？')) return;
+    setLoading('bigCustomer'); setNotice(null);
+    try {
+      await triggerBigCustomerCelebration();
+      setNotice({ tone: 'success', message: '大客户订单特效已发送，大屏将在当前动效结束后播放。' });
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) setAuthenticated(false);
+      setNotice({ tone: 'error', message: error instanceof Error ? error.message : '特效发送失败' });
+    } finally { setLoading(null); }
+  }
+
   if (authenticated === null) {
     return <main className="score-control-shell"><div className="score-control-loading"><Sparkles /> 正在连接积分系统</div></main>;
   }
@@ -226,9 +240,6 @@ export function ControlPanel() {
       <div className="score-control-container">
         <header className="score-control-header">
           <div><span><Zap fill="currentColor" /></span><p>量子膜积分控制台<small>省份 × 多套餐批量录入</small></p></div>
-          <button className="score-export-button" disabled={loading === 'export'} onClick={() => void exportScores()} type="button">
-            <Download />{loading === 'export' ? '正在导出' : '导出明细'}
-          </button>
         </header>
         {notice && <div className={`score-control-notice ${notice.tone}`}>{notice.tone === 'success' && <CheckCircle2 />}{notice.message}</div>}
 
@@ -260,6 +271,7 @@ export function ControlPanel() {
                           value={item.code}
                         />
                         <span>{item.title}<small>{unitPoints}分/件</small></span>
+                        <p className="score-package-desc">{item.description}</p>
                       </label>
                       {selected && (
                         <div className="score-quantity-control">
@@ -316,6 +328,15 @@ export function ControlPanel() {
             ))}</div>
           </section>
         </div>
+        <button className="score-export-button" disabled={loading === 'export'} onClick={() => void exportScores()} type="button">
+          <Download />{loading === 'export' ? '正在导出' : '导出明细'}
+        </button>
+        <section className="score-big-customer-launch">
+          <div><Star fill="currentColor" /><span><strong>现场专用 · 大客户订单</strong><small>杭州保通科技实业有限公司</small></span></div>
+          <button disabled={loading === 'bigCustomer'} onClick={() => void launchBigCustomer()} type="button">
+            <Sparkles />{loading === 'bigCustomer' ? '正在发送' : '播放专属出场特效'}
+          </button>
+        </section>
       </div>
     </main>
   );
