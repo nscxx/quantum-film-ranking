@@ -21,16 +21,48 @@ export type PackageScore = {
   tone: string;
 };
 
-export type ScoreEvent = {
+export type ScoreSubmissionItem = {
+  id: string;
+  packageCode: PackageCode;
+  packageTitle: string;
+  quantity: number;
+  unitPoints: number;
+  subtotal: number;
+};
+
+export type ScoreSubmission = {
   id: string;
   requestId: string;
   provinceCode: ProvinceCode;
   provinceName: string;
-  packageCode: PackageCode;
-  packageTitle: string;
-  points: number;
+  items: ScoreSubmissionItem[];
+  totalPoints: number;
   createdAt: string;
   revokedAt: string | null;
+};
+
+export type DisplayEvent = {
+  cursor: number;
+  id: string;
+  submissionId: string;
+  provinceCode: ProvinceCode;
+  provinceName: string;
+  packageSummary: string;
+  totalPoints: number;
+  scoreBefore: number;
+  scoreAfter: number;
+  rankBefore: number;
+  rankAfter: number;
+  milestone: number | null;
+  createdAt: string;
+};
+
+export type CelebrationType = 'score' | 'milestone' | 'top3' | 'champion';
+
+export type CelebrationEvent = DisplayEvent & {
+  celebrationId: string;
+  type: CelebrationType;
+  durationMs: number;
 };
 
 export type RankingSnapshot = {
@@ -42,7 +74,8 @@ export type RankingSnapshot = {
     totalScore: number;
     leaderName: string | null;
   };
-  recentEvents: ScoreEvent[];
+  recentSubmissions: ScoreSubmission[];
+  latestDisplayCursor: number;
   updatedAt: string;
 };
 

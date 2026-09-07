@@ -1,6 +1,8 @@
 .DS_Store
 *.zip
 *.git.bundle
+*.tsbuildinfo
+.tmp-pillow/
 
 # dependencies and build output
 node_modules/

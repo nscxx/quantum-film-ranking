@@ -1,0 +1,23 @@
+.preview { position: fixed; inset: 0; overflow: hidden; background: #010511; }
+.controls {
+  position: absolute; z-index: 4; left: 50%; bottom: 12px; transform: translateX(-50%);
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  padding: 9px 13px; width: max-content; max-width: calc(100% - 20px);
+  border: 1px solid #679bff44; border-radius: 10px;
+  color: #d8e6ff; background: #06102be8; box-shadow: 0 4px 30px #0008;
+  font: 500 12px / 1.5 'PingFang SC', sans-serif;
+}
+.controls button, .controls select {
+  border: 1px solid #558bda55; border-radius: 5px; padding: 5px 10px;
+  color: #eaf3ff; background: #142950; cursor: pointer; white-space: nowrap;
+}
+.controls button:hover { background: #254479; }
+.controls :focus-visible { outline: 2px solid #8dcaff; outline-offset: 3px; }
+.timeline, .toggle { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.timeline input { width: 140px; accent-color: #67baff; }
+.toggle input { accent-color: #67baff; }
+@media (max-width: 750px) {
+  .controls { gap: 8px; flex-wrap: wrap; width: calc(100% - 20px); padding: 7px; }
+  .timeline input { width: 90px; }
+  .controls button, .controls select { padding: 4px 6px; }
+}

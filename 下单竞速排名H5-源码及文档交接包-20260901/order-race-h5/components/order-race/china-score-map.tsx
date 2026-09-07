@@ -56,7 +56,8 @@ export function ChinaScoreMap({ provinces, changedProvinceCode }: { provinces: P
 
   const scoreByCode = useMemo(() => new Map(provinces.map((province) => [province.code, province])), [provinces]);
   const provinceCodes = useMemo(() => new Set(PROVINCES.map((province) => province.code)), []);
-  const mainFeatures = features.filter((feature) => provinceCodes.has(String(feature.properties.adcode) as (typeof PROVINCES)[number]['code']));
+  // Geographic coverage is separate from the list of participating provinces.
+  const mainFeatures = features.filter((feature) => String(feature.properties.adcode) === '710000' || provinceCodes.has(String(feature.properties.adcode) as (typeof PROVINCES)[number]['code']));
   const southSeaFeature = features.find((feature) => String(feature.properties.adcode) === '100000_JD');
 
   if (!mainFeatures.length) {
@@ -67,16 +68,12 @@ export function ChinaScoreMap({ provinces, changedProvinceCode }: { provinces: P
     <div className="quantum-map-canvas">
       <svg aria-label="中国省份积分热力地图" viewBox="0 0 860 500">
         <defs>
-          <filter id="map-glow" x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur stdDeviation="5" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
           <linearGradient id="map-side" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#178cff" /><stop offset="1" stopColor="#06429e" /></linearGradient>
-          <linearGradient id="map-top-cyan" x1=".18" y1="0" x2=".8" y2="1"><stop stopColor="#8de9ff" /><stop offset=".48" stopColor="#34c8ff" /><stop offset="1" stopColor="#168ce8" /></linearGradient>
-          <linearGradient id="map-top-indigo" x1=".18" y1="0" x2=".8" y2="1"><stop stopColor="#d2c8ff" /><stop offset=".52" stopColor="#8f91ff" /><stop offset="1" stopColor="#5b54d9" /></linearGradient>
-          <linearGradient id="map-top-purple" x1=".18" y1="0" x2=".8" y2="1"><stop stopColor="#e0b2ff" /><stop offset=".5" stopColor="#aa61ff" /><stop offset="1" stopColor="#7437d2" /></linearGradient>
-          <linearGradient id="map-top-pink" x1=".18" y1="0" x2=".8" y2="1"><stop stopColor="#ffc1df" /><stop offset=".5" stopColor="#ff70af" /><stop offset="1" stopColor="#df397c" /></linearGradient>
-          <linearGradient id="map-top-gold" x1=".18" y1="0" x2=".8" y2="1"><stop stopColor="#ffe9a2" /><stop offset=".5" stopColor="#ffc952" /><stop offset="1" stopColor="#eb8d19" /></linearGradient>
+          {SCORE_COLOR_BANDS.map((band) => (
+            <linearGradient id={`map-top-${band.id}`} x1=".18" y1="0" x2=".8" y2="1" key={band.id}>
+              <stop stopColor={band.highlight} /><stop offset=".5" stopColor={band.color} /><stop offset="1" stopColor={band.shadow} />
+            </linearGradient>
+          ))}
         </defs>
         <g className="quantum-map-perspective" transform="translate(16 28)">
           <g className="quantum-map-depth" transform="translate(0 27)">
@@ -85,7 +82,7 @@ export function ChinaScoreMap({ provinces, changedProvinceCode }: { provinces: P
           <g className="quantum-map-depth quantum-map-depth-mid" transform="translate(0 15)">
             {mainFeatures.map((feature) => <path d={createPath(feature.geometry)} key={`mid-${feature.properties.adcode}`} />)}
           </g>
-          <g className="quantum-map-top" filter="url(#map-glow)">
+          <g className="quantum-map-top">
             {mainFeatures.map((feature) => {
               const code = String(feature.properties.adcode);
               const province = scoreByCode.get(code as ProvinceScore['code']);
@@ -98,7 +95,7 @@ export function ChinaScoreMap({ provinces, changedProvinceCode }: { provinces: P
                   key={code}
                   data-province={feature.properties.name}
                 >
-                  <title>{feature.properties.name}：{province?.score.toLocaleString() ?? 0}分</title>
+                  <title>{feature.properties.name}{province ? `：${province.score.toLocaleString()}分` : ''}</title>
                 </path>
               );
             })}

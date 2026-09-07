@@ -1,5 +1,5 @@
 import type { PackageCode, ProvinceCode } from './config';
-import type { ApiFailure, RankingSnapshot, ScoreEvent } from './types';
+import type { ApiFailure, DisplayEvent, RankingSnapshot, ScoreSubmission } from './types';
 
 export class ApiError extends Error {
   status: number;
@@ -44,16 +44,59 @@ export function logoutControl() {
   return requestJson<{ ok: true }>('/api/control/logout', { method: 'POST' });
 }
 
-export function recordScore(requestId: string, provinceCode: ProvinceCode, packageCode: PackageCode) {
-  return requestJson<{ ok: true; event: ScoreEvent; idempotent: boolean }>('/api/orders', {
+export function recordScore(
+  requestId: string,
+  provinceCode: ProvinceCode,
+  items: Array<{ packageCode: PackageCode; quantity: number }>,
+) {
+  return requestJson<{ ok: true; submission: ScoreSubmission; displayEventId: string | null; idempotent: boolean }>('/api/orders', {
     method: 'POST',
-    body: JSON.stringify({ requestId, provinceCode, packageCode }),
+    body: JSON.stringify({ requestId, provinceCode, items }),
   });
 }
 
 export function revokeScore(id: string) {
-  return requestJson<{ ok: true; event: ScoreEvent; idempotent: boolean }>(
+  return requestJson<{ ok: true; submission: ScoreSubmission; idempotent: boolean }>(
     `/api/orders/${encodeURIComponent(id)}/revoke`,
     { method: 'POST' },
   );
+}
+
+export function fetchDisplayEvents(after: number, signal?: AbortSignal) {
+  return requestJson<{ events: DisplayEvent[]; nextCursor: number; hasMore: boolean }>(
+    `/api/display-events?after=${encodeURIComponent(after)}`,
+    { signal },
+  );
+}
+
+export function savePackagePoints(packageCode: PackageCode, points: number) {
+  return requestJson<{ ok: true; code: PackageCode; points: number; oldPoints?: number; unchanged: boolean }>(
+    `/api/control/packages/${packageCode}`,
+    { method: 'PATCH', body: JSON.stringify({ points }) },
+  );
+}
+
+function fileNameFromDisposition(value: string | null) {
+  if (!value) return '量子膜积分导出.xls';
+  const utf8 = value.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8?.[1]) return decodeURIComponent(utf8[1]);
+  const ascii = value.match(/filename="([^"]+)"/i);
+  return ascii?.[1] ?? '量子膜积分导出.xls';
+}
+
+export async function downloadScoreExport() {
+  const response = await fetch('/api/control/export', { cache: 'no-store' });
+  if (!response.ok) {
+    const data = (await response.json().catch(() => null)) as ApiFailure | null;
+    throw new ApiError(response.status, data?.message ?? '导出失败，请稍后重试', data);
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileNameFromDisposition(response.headers.get('Content-Disposition'));
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }

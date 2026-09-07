@@ -5,8 +5,13 @@ import type { SubmitEvent } from 'react';
 import {
   ArrowUpRight,
   CheckCircle2,
+  Download,
   KeyRound,
+  Minus,
+  Plus,
   RotateCcw,
+  Save,
+  Settings2,
   ShieldCheck,
   Sparkles,
   Zap,
@@ -15,53 +20,35 @@ import { PACKAGE_RULES, PROVINCES } from '@/lib/order-race/config';
 import type { PackageCode, ProvinceCode } from '@/lib/order-race/config';
 import {
   ApiError,
+  downloadScoreExport,
   fetchControlSession,
   fetchRanking,
   loginControl,
   recordScore,
   revokeScore,
+  savePackagePoints,
 } from '@/lib/order-race/api-client';
 import type { RankingSnapshot } from '@/lib/order-race/types';
 
 type Notice = { tone: 'success' | 'error' | 'info'; message: string };
+type Quantities = Record<PackageCode, number>;
+type PointDrafts = Record<PackageCode, string>;
 
 const PROVINCE_SORT_KEYS: Record<ProvinceCode, string> = {
-  '110000': 'beijing',
-  '120000': 'tianjin',
-  '130000': 'hebei',
-  '140000': 'shanxi',
-  '150000': 'neimenggu',
-  '210000': 'liaoning',
-  '220000': 'jilin',
-  '230000': 'heilongjiang',
-  '310000': 'shanghai',
-  '320000': 'jiangsu',
-  '330000': 'zhejiang',
-  '340000': 'anhui',
-  '350000': 'fujian',
-  '360000': 'jiangxi',
-  '370000': 'shandong',
-  '410000': 'henan',
-  '420000': 'hubei',
-  '430000': 'hunan',
-  '440000': 'guangdong',
-  '450000': 'guangxi',
-  '460000': 'hainan',
-  '500000': 'chongqing',
-  '510000': 'sichuan',
-  '520000': 'guizhou',
-  '530000': 'yunnan',
-  '540000': 'xizang',
-  '610000': 'shaanxi',
-  '620000': 'gansu',
-  '630000': 'qinghai',
-  '640000': 'ningxia',
-  '650000': 'xinjiang',
+  '110000': 'beijing', '120000': 'tianjin', '130000': 'hebei', '140000': 'shanxi',
+  '150000': 'neimenggu', '210000': 'liaoning', '220000': 'jilin', '230000': 'heilongjiang',
+  '310000': 'shanghai', '320000': 'jiangsu', '330000': 'zhejiang', '340000': 'anhui',
+  '350000': 'fujian', '360000': 'jiangxi', '370000': 'shandong', '410000': 'henan',
+  '420000': 'hubei', '430000': 'hunan', '440000': 'guangdong', '450000': 'guangxi',
+  '460000': 'hainan', '500000': 'chongqing', '510000': 'sichuan', '520000': 'guizhou',
+  '530000': 'yunnan', '540000': 'xizang', '610000': 'shaanxi', '620000': 'gansu',
+  '630000': 'qinghai', '640000': 'ningxia', '650000': 'xinjiang',
 };
 
 const PROVINCE_OPTIONS = [...PROVINCES].sort((a, b) =>
   PROVINCE_SORT_KEYS[a.code].localeCompare(PROVINCE_SORT_KEYS[b.code]),
 );
+const INITIAL_QUANTITIES: Quantities = { A: 0, B: 0, C: 0 };
 
 function formatTime(value: string) {
   const normalized = value.includes('T') ? value : `${value.replace(' ', 'T')}Z`;
@@ -76,8 +63,13 @@ export function ControlPanel() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [password, setPassword] = useState('');
   const [provinceCode, setProvinceCode] = useState<ProvinceCode>(PROVINCES[0].code);
-  const [packageCode, setPackageCode] = useState<PackageCode>('A');
-  const [loading, setLoading] = useState<'login' | 'entry' | 'revoke' | null>(null);
+  const [quantities, setQuantities] = useState<Quantities>(INITIAL_QUANTITIES);
+  const [pointDrafts, setPointDrafts] = useState<PointDrafts>({
+    A: String(PACKAGE_RULES[0].points),
+    B: String(PACKAGE_RULES[1].points),
+    C: String(PACKAGE_RULES[2].points),
+  });
+  const [loading, setLoading] = useState<'login' | 'entry' | 'revoke' | 'package' | 'export' | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
 
   const refresh = useCallback(async () => {
@@ -95,77 +87,115 @@ export function ControlPanel() {
         if (!alive) return;
         setAuthenticated(session.authenticated);
         setSnapshot(ranking);
+        setPointDrafts(Object.fromEntries(ranking.packages.map((item) => [item.code, String(item.pointsPerEntry)])) as PointDrafts);
       })
-      .catch(() => {
-        if (alive) setAuthenticated(false);
-      });
+      .catch(() => { if (alive) setAuthenticated(false); });
     const timer = setInterval(() => void refresh(), 2000);
-    return () => {
-      alive = false;
-      clearInterval(timer);
-    };
+    return () => { alive = false; clearInterval(timer); };
   }, [refresh]);
 
   const selectedProvince = useMemo(
     () => PROVINCES.find((province) => province.code === provinceCode) ?? PROVINCES[0],
     [provinceCode],
   );
-  const selectedPackage = useMemo(
-    () => PACKAGE_RULES.find((item) => item.code === packageCode) ?? PACKAGE_RULES[0],
-    [packageCode],
-  );
+  const pointsByPackage = useMemo(() => new Map(
+    (snapshot?.packages ?? PACKAGE_RULES.map((rule) => ({ code: rule.code, pointsPerEntry: rule.points })))
+      .map((item) => [item.code, item.pointsPerEntry]),
+  ), [snapshot]);
+  const selectedItems = useMemo(() => PACKAGE_RULES
+    .filter((item) => quantities[item.code] > 0)
+    .map((item) => ({
+      ...item,
+      quantity: quantities[item.code],
+      unitPoints: pointsByPackage.get(item.code) ?? item.points,
+    })), [pointsByPackage, quantities]);
+  const totalPoints = selectedItems.reduce((sum, item) => sum + item.quantity * item.unitPoints, 0);
+  const packageSummary = selectedItems.map((item) => `${item.code}×${item.quantity}`).join(' · ');
+
+  function selectPackage(code: PackageCode, checked: boolean) {
+    setQuantities((current) => ({ ...current, [code]: checked ? Math.max(1, current[code]) : 0 }));
+  }
+
+  function setQuantity(code: PackageCode, quantity: number) {
+    setQuantities((current) => ({ ...current, [code]: Math.min(999, Math.max(1, Math.trunc(quantity || 1))) }));
+  }
 
   async function submitLogin(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setLoading('login');
-    setNotice(null);
+    event.preventDefault(); setLoading('login'); setNotice(null);
     try {
-      await loginControl(password);
-      setAuthenticated(true);
-      setPassword('');
+      await loginControl(password); setAuthenticated(true); setPassword('');
       setNotice({ tone: 'success', message: '后台已解锁，可以开始录入积分。' });
     } catch (error) {
       setNotice({ tone: 'error', message: error instanceof Error ? error.message : '登录失败' });
-    } finally {
-      setLoading(null);
-    }
+    } finally { setLoading(null); }
   }
 
   async function submitEntry(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading('entry');
-    setNotice(null);
+    if (!selectedItems.length) return;
+    setLoading('entry'); setNotice(null);
     try {
-      const result = await recordScore(crypto.randomUUID(), provinceCode, packageCode);
+      const result = await recordScore(
+        crypto.randomUUID(),
+        provinceCode,
+        selectedItems.map((item) => ({ packageCode: item.code, quantity: item.quantity })),
+      );
+      setQuantities({ ...INITIAL_QUANTITIES });
       setNotice({
         tone: 'success',
-        message: `${result.event.provinceName} ${result.event.packageTitle} 登记成功，积分 +${result.event.points}。`,
+        message: `${result.submission.provinceName} ${packageSummary} 登记成功，积分 +${result.submission.totalPoints}，大屏动效已排队。`,
       });
       await refresh();
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) setAuthenticated(false);
       setNotice({ tone: 'error', message: error instanceof Error ? error.message : '积分登记失败' });
-    } finally {
-      setLoading(null);
-    }
+    } finally { setLoading(null); }
   }
 
   async function revoke(id: string) {
-    setLoading('revoke');
-    setNotice(null);
+    setLoading('revoke'); setNotice(null);
     try {
       const result = await revokeScore(id);
       setNotice({
         tone: 'info',
-        message: `${result.event.provinceName} ${result.event.packageTitle} 已撤销，积分 -${result.event.points}。`,
+        message: `${result.submission.provinceName} ${result.submission.items.map((item) => `${item.packageCode}×${item.quantity}`).join(' · ')} 已整单撤销，积分 -${result.submission.totalPoints}。`,
       });
       await refresh();
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) setAuthenticated(false);
       setNotice({ tone: 'error', message: error instanceof Error ? error.message : '撤销失败' });
-    } finally {
-      setLoading(null);
+    } finally { setLoading(null); }
+  }
+
+  async function updatePoints(code: PackageCode) {
+    const nextPoints = Number(pointDrafts[code]);
+    if (!Number.isInteger(nextPoints) || nextPoints < 1 || nextPoints > 100000) {
+      setNotice({ tone: 'error', message: '套餐积分必须是1至100000的整数。' });
+      return;
     }
+    const current = snapshot?.packages.find((item) => item.code === code)?.pointsPerEntry;
+    if (!window.confirm(`将${code}套餐单件积分从 ${current ?? '-'} 改为 ${nextPoints}？\n仅影响之后的录入，历史积分不会重算。`)) return;
+    setLoading('package'); setNotice(null);
+    try {
+      await savePackagePoints(code, nextPoints);
+      setNotice({ tone: 'success', message: `${code}套餐已更新为 ${nextPoints}分/件，仅影响后续录入。` });
+      setPointDrafts((current) => ({ ...current, [code]: String(nextPoints) }));
+      await refresh();
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) setAuthenticated(false);
+      setNotice({ tone: 'error', message: error instanceof Error ? error.message : '套餐积分保存失败' });
+    } finally { setLoading(null); }
+  }
+
+  async function exportScores() {
+    setLoading('export'); setNotice(null);
+    try {
+      await downloadScoreExport();
+      setNotice({ tone: 'success', message: '已下载 Excel，内含「明细」和「汇总」两张表。' });
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) setAuthenticated(false);
+      setNotice({ tone: 'error', message: error instanceof Error ? error.message : '导出失败' });
+    } finally { setLoading(null); }
   }
 
   if (authenticated === null) {
@@ -177,8 +207,7 @@ export function ControlPanel() {
       <main className="score-control-shell">
         <div className="score-control-login">
           <div className="score-control-login-mark"><ShieldCheck /></div>
-          <p>QUANTUM FILM SCORE CONTROL</p>
-          <h1>积分录入后台</h1>
+          <p>QUANTUM FILM SCORE CONTROL</p><h1>积分录入后台</h1>
           <span>输入活动口令后，才可以为省份登记套餐积分。</span>
           <form onSubmit={submitLogin}>
             <label htmlFor="control-password">活动口令</label>
@@ -196,68 +225,95 @@ export function ControlPanel() {
     <main className="score-control-shell">
       <div className="score-control-container">
         <header className="score-control-header">
-          <div><span><Zap fill="currentColor" /></span><p>量子膜积分控制台<small>省份 × 套餐加权积分</small></p></div>
+          <div><span><Zap fill="currentColor" /></span><p>量子膜积分控制台<small>省份 × 多套餐批量录入</small></p></div>
+          <button className="score-export-button" disabled={loading === 'export'} onClick={() => void exportScores()} type="button">
+            <Download />{loading === 'export' ? '正在导出' : '导出明细'}
+          </button>
         </header>
-
         {notice && <div className={`score-control-notice ${notice.tone}`}>{notice.tone === 'success' && <CheckCircle2 />}{notice.message}</div>}
 
         <div className="score-control-workspace">
           <section className="score-entry-card">
-            <header><div><span>核心操作</span><h2>登记一条套餐积分</h2></div><i>大屏约1秒更新</i></header>
+            <header><div><span>核心操作</span><h2>登记一张套餐积分单</h2></div><i>大屏约1秒响应</i></header>
             <form onSubmit={submitEntry}>
               <label htmlFor="province-select">选择省份</label>
               <select id="province-select" value={provinceCode} onChange={(event) => setProvinceCode(event.target.value as ProvinceCode)}>
-                {PROVINCE_OPTIONS.map((province) => (
-                  <option key={province.code} value={province.code}>
-                    {PROVINCE_SORT_KEYS[province.code][0].toUpperCase()} · {province.name}
-                  </option>
-                ))}
+                {PROVINCE_OPTIONS.map((province) => <option key={province.code} value={province.code}>{PROVINCE_SORT_KEYS[province.code][0].toUpperCase()} · {province.name}</option>)}
               </select>
 
-              <fieldset>
-                <legend>选择套餐</legend>
-                {PACKAGE_RULES.map((item) => (
-                  <button className={packageCode === item.code ? 'active' : ''} key={item.code} onClick={() => setPackageCode(item.code)} type="button">
-                    <b>{item.code}</b><span>{item.title}<small>+{item.points}分</small></span>
-                  </button>
-                ))}
+              <fieldset className="score-package-picker">
+                <legend>
+                  <span>选择套餐（可同时多选）</span>
+                  <small>已选 {selectedItems.length} / {PACKAGE_RULES.length} 项</small>
+                </legend>
+                {PACKAGE_RULES.map((item) => {
+                  const selected = quantities[item.code] > 0;
+                  const unitPoints = pointsByPackage.get(item.code) ?? item.points;
+                  return (
+                    <article className={selected ? 'active' : ''} key={item.code}>
+                      <label className="score-package-toggle">
+                        <input
+                          checked={selected}
+                          onChange={(event) => selectPackage(item.code, event.currentTarget.checked)}
+                          aria-label={`选择${item.title}`}
+                          type="checkbox"
+                          value={item.code}
+                        />
+                        <span>{item.title}<small>{unitPoints}分/件</small></span>
+                      </label>
+                      {selected && (
+                        <div className="score-quantity-control">
+                          <button aria-label={`${item.title}减少一件`} onClick={() => setQuantity(item.code, quantities[item.code] - 1)} type="button"><Minus /></button>
+                          <input aria-label={`${item.title}件数`} max={999} min={1} onChange={(event) => setQuantity(item.code, Number(event.target.value))} type="number" value={quantities[item.code]} />
+                          <button aria-label={`${item.title}增加一件`} onClick={() => setQuantity(item.code, quantities[item.code] + 1)} type="button"><Plus /></button>
+                        </div>
+                      )}
+                      {selected && <em>小计 {(unitPoints * quantities[item.code]).toLocaleString()}分</em>}
+                    </article>
+                  );
+                })}
               </fieldset>
 
               <div className="score-entry-preview">
-                <span>本次登记</span>
-                <strong>{selectedProvince.name} · {selectedPackage.title}</strong>
-                <p>{selectedPackage.description}</p>
-                <b>+{selectedPackage.points}<small>分</small></b>
+                <span>本次登记</span><strong>{selectedProvince.name} · {packageSummary || '尚未选择套餐'}</strong>
+                <p>{selectedItems.map((item) => `${item.title} ${item.quantity}件`).join(' · ') || '至少选择一种套餐'}</p>
+                <b>+{totalPoints.toLocaleString()}<small>分</small></b>
               </div>
-
-              <button className="score-entry-submit" disabled={loading === 'entry'} type="submit">
-                <Zap fill="currentColor" />{loading === 'entry' ? '正在写入' : `确认登记，积分 +${selectedPackage.points}`}
+              <button className="score-entry-submit" disabled={loading === 'entry' || !selectedItems.length} type="submit">
+                <Zap fill="currentColor" />{loading === 'entry' ? '正在写入' : `确认登记，积分 +${totalPoints.toLocaleString()}`}
               </button>
             </form>
           </section>
 
           <section className="score-control-panel score-ranking-panel">
             <header><h2>当前省份排名</h2><span>每2秒刷新</span></header>
-            <div>
-              {snapshot?.provinces.map((province) => (
-                <article key={province.code}><b>{province.rank}</b><span>{province.name}</span><i><em style={{ width: `${Math.max(0, province.score / Math.max(snapshot.provinces[0]?.score ?? 1, 1) * 100)}%` }} /></i><strong>{province.score.toLocaleString()}</strong></article>
-              ))}
-            </div>
+            <div>{snapshot?.provinces.map((province) => <article key={province.code}><b>{province.rank}</b><span>{province.name}</span><i><em style={{ width: `${Math.max(0, province.score / Math.max(snapshot.provinces[0]?.score ?? 1, 1) * 100)}%` }} /></i><strong>{province.score.toLocaleString()}</strong></article>)}</div>
           </section>
 
           <section className="score-control-panel score-recent-panel">
-            <header><h2>最近录入</h2><span>撤销保留记录</span></header>
+            <header><h2>最近录入</h2><span>按整单撤销</span></header>
             <div>
-              {snapshot?.recentEvents.map((item) => (
+              {snapshot?.recentSubmissions.map((item) => (
                 <article className={item.revokedAt ? 'revoked' : ''} key={item.id}>
-                  <b>{item.packageCode}</b>
-                  <span><strong>{item.provinceName}</strong><small>{item.packageTitle} · {formatTime(item.createdAt)}</small></span>
-                  <em>{item.revokedAt ? '已撤销' : `+${item.points}`}</em>
-                  {!item.revokedAt && <button aria-label={`撤销${item.provinceName}${item.packageTitle}`} disabled={loading === 'revoke'} onClick={() => void revoke(item.id)}><RotateCcw />撤销</button>}
+                  <b>{item.items.length}</b>
+                  <span><strong>{item.provinceName}</strong><small>{item.items.map((detail) => `${detail.packageCode}×${detail.quantity}`).join(' · ')} · {formatTime(item.createdAt)}</small></span>
+                  <em>{item.revokedAt ? '已撤销' : `+${item.totalPoints}`}</em>
+                  {!item.revokedAt && <button aria-label={`撤销${item.provinceName}整单`} disabled={loading === 'revoke'} onClick={() => void revoke(item.id)}><RotateCcw />撤销</button>}
                 </article>
               ))}
-              {!snapshot?.recentEvents.length && <p className="score-control-empty">还没有积分记录，完成首次登记后会显示在这里。</p>}
+              {!snapshot?.recentSubmissions.length && <p className="score-control-empty">还没有积分记录，完成首次登记后会显示在这里。</p>}
             </div>
+          </section>
+
+          <section className="score-control-panel score-package-settings">
+            <header><h2><Settings2 /> 套餐单件积分</h2><span>仅影响新录入</span></header>
+            <div>{PACKAGE_RULES.map((item) => (
+              <article key={item.code}>
+                <b>{item.code}</b><span>{item.title}<small>历史积分不重算</small></span>
+                <input aria-label={`${item.title}单件积分`} max={100000} min={1} onChange={(event) => setPointDrafts((current) => ({ ...current, [item.code]: event.target.value }))} type="number" value={pointDrafts[item.code]} />
+                <button disabled={loading === 'package'} onClick={() => void updatePoints(item.code)} type="button"><Save />保存</button>
+              </article>
+            ))}</div>
           </section>
         </div>
       </div>

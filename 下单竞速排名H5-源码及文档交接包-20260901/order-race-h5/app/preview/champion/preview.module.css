@@ -1,0 +1,19 @@
+.preview { position: fixed; inset: 0; overflow: hidden; background: #020308; }
+.panel { position: absolute; z-index: 5; bottom: 10px; left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 20px); color: #f5e2bd; font: 500 12px / 1.5 'PingFang SC', sans-serif; }
+.chapters { display: flex; justify-content: center; gap: 5px; margin-bottom: 6px; }
+.chapters button { padding: 4px 10px; border: 1px solid #e7b86940; border-radius: 4px; color: #f3d59c; background: #0c0c11d9; cursor: pointer; }
+.controls { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 9px 12px; border: 1px solid #dba45255; border-radius: 8px; background: #0c0c12ef; box-shadow: 0 4px 24px #0008; }
+.controls button, .controls select { border: 1px solid #cd934d55; border-radius: 4px; padding: 5px 9px; color: #f5e5c8; background: #392710; cursor: pointer; white-space: nowrap; }
+.panel button:hover { background: #684719; }
+.panel :focus-visible { outline: 2px solid #ffc878; outline-offset: 3px; }
+.timeline, .toggle { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.timeline input { width: 160px; accent-color: #edb95f; }
+.timeline span { font-variant-numeric: tabular-nums; width: 70px; }
+.toggle input { accent-color: #edb95f; }
+@media (max-width: 780px) {
+  .panel { width: calc(100% - 20px); }
+  .controls { flex-wrap: wrap; gap: 8px; padding: 7px; }
+  .timeline input { width: 100px; }
+  .chapters { flex-wrap: wrap; gap: 4px; }
+  .chapters button { padding: 3px 6px; }
+}

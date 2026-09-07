@@ -60,13 +60,15 @@ export const PROVINCES = [
 
 export type ProvinceCode = (typeof PROVINCES)[number]['code'];
 
+// Keep band IDs stable for ranking/event consumers; visual colors live here.
 export const SCORE_COLOR_BANDS = [
-  { id: 'cyan', min: 0, max: 999, label: '0-999', color: '#18baff' },
-  { id: 'indigo', min: 1000, max: 2999, label: '1,000-2,999', color: '#6878ff' },
-  { id: 'purple', min: 3000, max: 4999, label: '3,000-4,999', color: '#974cff' },
-  { id: 'pink', min: 5000, max: 6999, label: '5,000-6,999', color: '#ff4e9d' },
-  { id: 'gold', min: 7000, max: Number.POSITIVE_INFINITY, label: '≥ 7,000', color: '#ffad1f' },
+  { id: 'cyan', min: 0, max: 99, label: '0-99', color: '#D9E1E7', highlight: '#EEF1F4', shadow: '#C5CFD8' },
+  { id: 'purple', min: 100, max: 699, label: '100-699', color: '#65C5F5', highlight: '#A5E5FF', shadow: '#369FE2' },
+  { id: 'pink', min: 700, max: 1399, label: '700-1,399', color: '#2857B8', highlight: '#4779E3', shadow: '#2049A4' },
+  { id: 'gold', min: 1400, max: Number.POSITIVE_INFINITY, label: '≥ 1,400', color: '#FFC548', highlight: '#FFE58C', shadow: '#ECA323' },
 ] as const;
+
+export const SCORE_MILESTONES = [100, 700, 1400] as const;
 
 export type ScoreBandId = (typeof SCORE_COLOR_BANDS)[number]['id'];
 
@@ -80,6 +82,10 @@ export function getProvince(code: string) {
 
 export function getScoreBand(score: number) {
   return SCORE_COLOR_BANDS.find((band) => score >= band.min && score <= band.max) ?? SCORE_COLOR_BANDS[0];
+}
+
+export function getHighestCrossedMilestone(scoreBefore: number, scoreAfter: number) {
+  return [...SCORE_MILESTONES].reverse().find((milestone) => scoreBefore < milestone && scoreAfter >= milestone) ?? null;
 }
 
 export function allocatePercentages(values: number[]) {

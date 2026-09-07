@@ -1,0 +1,196 @@
+.stage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #010511;
+  pointer-events: none;
+  isolation: isolate;
+}
+.frame {
+  position: relative;
+  width: min(100%, 177.777vh);
+  aspect-ratio: 16 / 9;
+  container-type: inline-size;
+}
+.scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  color: #fff;
+  background: #010511 url('/lottie/top3/track.png') center / cover no-repeat;
+  animation: sceneLife 5s both paused;
+}
+.animation { position: absolute; inset: 0; }
+.animation svg { display: block; width: 100%; height: 100%; }
+.stage:not([data-ready="true"]) .scene { opacity: 0; }
+.stage[data-failed="true"] .scene { opacity: 1; animation: none; }
+.stage[data-failed="true"] .scene * { animation: none; }
+.brand {
+  position: absolute; top: 3.4%; left: 2.2%; width: 8.2%;
+  mix-blend-mode: screen;
+  animation: brandLife 5s both paused;
+}
+.brand img { display: block; width: 100%; }
+.brandMotto {
+  position: absolute; top: 4.4%; right: 2.6%; text-align: center;
+  animation: brandLife 5s both paused;
+}
+.brandMotto span { display: block; font-size: .8cqw; letter-spacing: .35em; }
+.brandMotto small { display: block; margin-top: .15cqw; font: 600 .59cqw Arial, sans-serif; letter-spacing: .04em; }
+.heading {
+  position: absolute; top: 11.8%; left: 19%; width: 62%; text-align: center;
+  animation: headingLife 5s both paused;
+}
+.title {
+  position: relative; display: inline-block; margin: 0;
+  font-family: 'HarmonyOS Sans SC', 'Source Han Sans SC', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-size: 6.7cqw; font-weight: 950; font-style: italic; line-height: 1.08;
+  letter-spacing: .075em; white-space: nowrap;
+}
+.title::before {
+  content: attr(data-text); position: absolute; inset: 0;
+  color: #173d91; -webkit-text-stroke: .08cqw #94c7ff;
+  transform: translate(-.27cqw, .32cqw);
+}
+.title span {
+  position: relative; display: block;
+  color: #e4eaff;
+  background: linear-gradient(166deg, #fff 5%, #a5d4ff 22%, #f7faff 36%, #387bf2 45%, #dfedff 47%, #fff8df 61%, #ba8959 75%, #fff5d7 96%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: .045cqw #ecf5ff;
+  filter: drop-shadow(0 0 .8cqw #3471ff80);
+}
+.titleSweep {
+  position: absolute; top: 88%; left: 12%; width: 76%; height: .11cqw;
+  background: linear-gradient(90deg, transparent, #57a1ff 32%, #fff9dc 54%, transparent);
+  box-shadow: 0 0 .8cqw #4c91ff;
+  animation: titleSweep 5s both paused;
+}
+.subtitle {
+  position: absolute; top: 24%; left: 0; width: 100%; margin: 0;
+  text-align: center; font: italic 900 3.5cqw / 1.2 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  letter-spacing: .14em; color: #f2f9ff;
+  text-shadow: -.13cqw .2cqw #2260d1, 0 0 .9cqw #176aff;
+  animation: subtitleLife 5s both paused;
+}
+.motto {
+  position: absolute; top: 32.6%; left: 0; width: 100%; margin: 0;
+  text-align: center; font-size: 1.3cqw; font-weight: 500; letter-spacing: .29em;
+  text-shadow: 0 0 .6cqw #2369ff; animation: mottoLife 5s both paused;
+}
+.topLabel {
+  position: absolute; top: 51%; left: 35.4%;
+  font: italic 900 3.5cqw / 1 Arial, sans-serif;
+  color: #fff0c7; -webkit-text-stroke: .045cqw #ffefd5;
+  text-shadow: .13cqw .16cqw #956135, 0 0 1.2cqw #ffc86c;
+  animation: rankLife 5s both paused;
+}
+.leftFlagCopy, .rightFlagCopy {
+  position: absolute; margin: 0; font-weight: 900; font-style: italic;
+  color: #e4f4ff; text-shadow: 0 0 .4cqw #38aaff, .12cqw .16cqw #174899;
+}
+.leftFlagCopy { left: 11%; top: 39.7%; font: italic 900 2cqw / 1.16 Arial, sans-serif; animation: leftFlagLife 5s both paused; }
+.rightFlagCopy { right: 9%; top: 42%; font-size: 1.95cqw; line-height: 1.35; animation: rightFlagLife 5s both paused; }
+.floorLabel {
+  position: absolute; left: 0; top: 85.5%; width: 100%; text-align: center;
+  color: #82a8ff; opacity: .4; font: italic 900 6.3cqw / 1 Arial, sans-serif;
+  filter: blur(.13cqw); transform-origin: center; animation: floorLife 5s both paused;
+}
+.lightBloom {
+  position: absolute; inset: 0; mix-blend-mode: screen;
+  background: radial-gradient(ellipse 36% 7% at 50% 76%, #ffc57355, transparent 85%),
+    radial-gradient(ellipse 24% 16% at 50% 72%, #236dff22, transparent 85%);
+  animation: bloomLife 5s both paused;
+}
+.vignette {
+  position: absolute; inset: 0;
+  box-shadow: inset 0 0 7cqw 1cqw #00061588;
+  animation: vignetteLife 5s both paused;
+}
+.fallbackCar {
+  position: absolute; width: 36%; aspect-ratio: 1672 / 941; left: 32%; top: 59%;
+  background: url('/lottie/top3/car.png') center / contain no-repeat;
+}
+@keyframes sceneLife {
+  0% { opacity: 0; transform: scale(1.08); }
+  8% { opacity: 1; transform: scale(1); }
+  91% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.035); }
+}
+@keyframes headingLife {
+  0%, 10% { opacity: 0; transform: translateY(-3cqw) scale(1.16); }
+  23% { opacity: 1; transform: translateY(.2cqw) scale(.985); }
+  29% { opacity: 1; transform: translateY(0) scale(1); }
+  58% { opacity: 1; transform: translateY(-.16cqw) scale(1); }
+  84%, 100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes subtitleLife {
+  0%, 18% { opacity: 0; transform: translateY(1.5cqw) scale(.88); }
+  32% { opacity: 1; transform: translateY(0) scale(1.04); }
+  39%, 65% { opacity: 1; transform: translateY(0) scale(1); }
+  82%, 100% { opacity: 1; transform: translateY(-.1cqw) scale(1.01); }
+}
+@keyframes mottoLife {
+  0%, 27% { opacity: 0; transform: translateY(.8cqw); }
+  42% { opacity: .95; transform: translateY(0); }
+  70% { opacity: .75; transform: translateY(-.1cqw); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes rankLife {
+  0%, 10% { opacity: 0; transform: translateX(-3cqw) scale(.5); }
+  24% { opacity: 1; transform: translateX(0) scale(1.08); }
+  30%, 65% { opacity: 1; transform: translateX(0) scale(1); }
+  100% { opacity: 1; transform: translateY(-.2cqw) scale(1.02); }
+}
+@keyframes titleSweep {
+  0%, 24% { opacity: 0; transform: translateX(-28%) scaleX(.1); }
+  37% { opacity: 1; transform: translateX(5%) scaleX(1); }
+  45% { opacity: .2; transform: translateX(25%) scaleX(.1); }
+  59% { opacity: .2; transform: translateX(-20%) scaleX(.2); }
+  72% { opacity: 1; transform: translateX(5%) scaleX(1); }
+  89%, 100% { opacity: 0; transform: translateX(32%) scaleX(.1); }
+}
+@keyframes brandLife {
+  0% { opacity: 0; transform: translateY(-.8cqw); }
+  18% { opacity: .9; transform: translateY(0); }
+  58% { opacity: 1; transform: translateY(-.1cqw); }
+  100% { opacity: .9; transform: translateY(0); }
+}
+@keyframes leftFlagLife {
+  0% { opacity: 0; transform: translateX(-9cqw) skewY(13deg); }
+  20% { opacity: 1; transform: translateX(0) skewY(13deg); }
+  40% { opacity: 1; transform: translateY(.5cqw) skewY(10deg); }
+  60% { opacity: 1; transform: translateY(-.3cqw) skewY(14deg); }
+  80% { opacity: 1; transform: translateY(.4cqw) skewY(10deg); }
+  100% { opacity: 1; transform: translateY(0) skewY(13deg); }
+}
+@keyframes rightFlagLife {
+  0% { opacity: 0; transform: translateX(9cqw) skewY(-13deg); }
+  20% { opacity: 1; transform: translateX(0) skewY(-13deg); }
+  40% { opacity: 1; transform: translateY(-.4cqw) skewY(-10deg); }
+  60% { opacity: 1; transform: translateY(.3cqw) skewY(-14deg); }
+  80% { opacity: 1; transform: translateY(-.5cqw) skewY(-10deg); }
+  100% { opacity: 1; transform: translateY(0) skewY(-13deg); }
+}
+@keyframes floorLife {
+  0%, 26% { opacity: 0; transform: perspective(30cqw) rotateX(62deg) scale(.5); }
+  44% { opacity: .32; transform: perspective(30cqw) rotateX(62deg) scale(1); }
+  73% { opacity: .48; transform: perspective(30cqw) rotateX(62deg) scale(1.025); }
+  100% { opacity: .25; transform: perspective(30cqw) rotateX(62deg) scale(1.05); }
+}
+@keyframes bloomLife {
+  0% { opacity: 0; }
+  23% { opacity: .1; }
+  35% { opacity: 1; }
+  44% { opacity: .3; }
+  65% { opacity: .8; }
+  78% { opacity: .25; }
+  100% { opacity: .6; }
+}
+@keyframes vignetteLife { 0% { opacity: .85; } 32% { opacity: .2; } 70% { opacity: .45; } 100% { opacity: .9; } }
+@media (prefers-reduced-motion: reduce) {
+  .stage .scene, .stage .scene * { animation: none; }
+  .stage .scene { opacity: 1; }
+}

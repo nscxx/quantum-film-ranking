@@ -1,0 +1,164 @@
+.stage {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  overflow: hidden; background: #020308; isolation: isolate; pointer-events: none;
+}
+.frame { position: relative; width: min(100%, 177.777vh); aspect-ratio: 16 / 9; container-type: inline-size; }
+.scene {
+  position: absolute; inset: 0; overflow: hidden; color: #fff3d3;
+  background: #020308 url('/lottie/champion/city.png') center / cover no-repeat;
+  animation: sceneLife 20s both paused;
+}
+.stage:not([data-ready="true"]) .scene { opacity: 0; }
+.mark {
+  position: absolute; left: 50%; top: 38%; z-index: 2; transform: translate(-50%, -50%);
+  display: grid; place-items: center; animation: markLife 20s both paused;
+}
+.trophy {
+  position: relative; display: flex; flex-direction: column; align-items: center;
+}
+.trophy::after {
+  content: ''; position: absolute; left: 58%; bottom: 4%; width: 5.5cqw; height: 1.2cqw;
+  transform: translateX(-50%); pointer-events: none;
+  background: radial-gradient(ellipse, #ffb43055, transparent 72%);
+}
+.crown {
+  position: absolute; z-index: 2; left: 58%; top: -2.9cqw; width: 9.6cqw; height: auto;
+  transform: translateX(-50%);
+  filter: saturate(1.04) brightness(1.05) drop-shadow(0 .18cqw .4cqw #000a);
+}
+.one {
+  position: relative; display: block; margin: 0; line-height: .82;
+  font-family: Arial, 'Helvetica Neue', sans-serif;
+  font-weight: 900; font-size: 24cqw;
+  color: #ffeec0;
+  background: linear-gradient(174deg, #fffef0 5%, #fff2c1 25%, #e9b85e 44%, #9c521a 46%, #ffe6aa 49%, #eaa948 70%, #fff0b5 94%);
+  background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: .07cqw #fff0bd; filter: drop-shadow(0 .55cqw 1cqw #000a) drop-shadow(0 0 1cqw #ffb43050);
+}
+.one::before {
+  content: attr(data-text); position: absolute; inset: 0;
+  color: #6e350c; -webkit-text-stroke: .08cqw #f6b95e;
+  transform: translate(.16cqw, .38cqw);
+}
+.dragon {
+  position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1;
+  object-fit: contain; background: transparent; mix-blend-mode: screen;
+}
+.plaque {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 42%; z-index: 3;
+  background: linear-gradient(180deg, transparent 0%, #020308b8 42%, #020308ef 100%);
+}
+.heading {
+  position: absolute; left: 18%; top: 66%; width: 64%; text-align: center; z-index: 4;
+  animation: headingLife 20s both paused;
+}
+.title {
+  position: relative; display: inline-block; margin: 0; white-space: nowrap;
+  font-family: 'HarmonyOS Sans SC', 'Source Han Sans SC', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-weight: 950; font-size: 6.45cqw; font-style: italic; letter-spacing: .07em; line-height: 1.12;
+}
+.title::before {
+  content: attr(data-text); position: absolute; inset: 0;
+  color: #6e350c; -webkit-text-stroke: .07cqw #f6b95e;
+  transform: translate(.13cqw, .36cqw);
+}
+.title span {
+  position: relative; display: block; color: #ffeec0;
+  background: linear-gradient(174deg, #fffef0 5%, #fff2c1 25%, #e9b85e 44%, #9c521a 46%, #ffe6aa 49%, #eaa948 70%, #fff0b5 94%);
+  background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: .035cqw #fff0bd; filter: drop-shadow(0 0 .5cqw #ffae2840);
+}
+.shine {
+  position: absolute; left: 2%; bottom: -.06cqw; width: 96%; height: .1cqw;
+  background: linear-gradient(90deg, transparent, #d98c31, #ffffe1, #d98c31, transparent);
+  box-shadow: 0 0 .55cqw #ffc24d; animation: shineLife 20s both paused;
+}
+.subtitle {
+  position: absolute; top: 81.2%; left: 0; width: 100%; text-align: center; margin: 0; z-index: 4;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-size: 2.22cqw; font-weight: 650; line-height: 1.3; letter-spacing: .13em;
+  text-shadow: 0 .09cqw #58300b, 0 0 .45cqw #ffbd3240;
+  animation: detailLife 20s both paused;
+}
+.motto {
+  position: absolute; top: 87.4%; left: 0; width: 100%; margin: 0; z-index: 4;
+  display: flex; align-items: center; justify-content: center; gap: 1.2cqw;
+  color: #f5efea; font-size: 1.25cqw; letter-spacing: .26em;
+  animation: mottoLife 20s both paused;
+}
+.motto i { width: 3.6cqw; height: 1px; background: linear-gradient(90deg, transparent, #e8dbb7); }
+.motto i:last-child { transform: scaleX(-1); }
+.aura {
+  position: absolute; inset: 0; mix-blend-mode: screen; pointer-events: none;
+  background: radial-gradient(ellipse 22% 28% at 50% 40%, #ffb93844, transparent),
+    radial-gradient(ellipse 48% 10% at 50% 82%, #ffc65655, transparent);
+  animation: auraLife 20s both paused;
+}
+.leftBanner, .rightBanner {
+  position: absolute; top: 22%; color: #c6c1cc; opacity: .32;
+  font: 800 2.3cqw / 1 Arial, sans-serif; letter-spacing: .06em;
+  writing-mode: vertical-rl; text-orientation: mixed;
+}
+.leftBanner { left: 8%; animation: leftBannerLife 20s both paused; }
+.rightBanner { right: 7%; animation: rightBannerLife 20s both paused; }
+.vignette { position: absolute; inset: 0; box-shadow: inset 0 0 6cqw #03030a90; animation: vignetteLife 20s both paused; }
+.fallback { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #ffe2a0; background: #02040b99; }
+.fallback b { font: 900 16cqw Arial, sans-serif; }
+.fallback strong { font-size: 5cqw; }
+.fallback span { margin-top: 1cqw; font-size: 2.2cqw; }
+.stage[data-failed="true"] .scene { opacity: 1; animation: none; }
+.stage[data-failed="true"] .scene > :not(.fallback):not(.dragon) { opacity: 0; }
+@keyframes sceneLife {
+  0% { opacity: 0; transform: scale(1.04); }
+  4% { opacity: 1; transform: scale(1); }
+  96% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.02); }
+}
+@keyframes markLife {
+  0% { opacity: 0; transform: translate(-50%, -42%) scale(.72); }
+  7% { opacity: .85; transform: translate(-50%, -50%) scale(1.04); }
+  11% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes headingLife {
+  0%, 11% { opacity: 0; transform: translateY(1.7cqw) scale(.83); }
+  15% { opacity: 1; transform: translateY(-.13cqw) scale(1.03); }
+  18% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes detailLife {
+  0%, 13% { opacity: 0; transform: translateY(.7cqw); }
+  18% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes mottoLife {
+  0%, 17% { opacity: 0; transform: translateY(.8cqw); }
+  22% { opacity: .92; transform: translateY(0); }
+  100% { opacity: .96; transform: translateY(0); }
+}
+@keyframes shineLife {
+  0%, 13% { opacity: 0; transform: translateX(-23%) scaleX(.1); }
+  18% { opacity: 1; transform: translateX(0) scaleX(1); }
+  22% { opacity: .12; transform: translateX(23%) scaleX(.1); }
+  27% { opacity: 0; transform: translateX(-23%) scaleX(.1); }
+  31% { opacity: 1; transform: translateX(0) scaleX(1); }
+  36%, 100% { opacity: 0; transform: translateX(23%) scaleX(.1); }
+}
+@keyframes auraLife { 0% { opacity: 0; } 6% { opacity: .45; } 16% { opacity: 1; } 80% { opacity: .7; } 100% { opacity: .8; } }
+@keyframes leftBannerLife {
+  0% { opacity: 0; transform: skewY(8deg) translateY(3cqw); }
+  18% { opacity: .28; transform: skewY(8deg) translateY(0); }
+  54% { opacity: .42; transform: skewY(10deg) translateY(-.4cqw); }
+  100% { opacity: .3; transform: skewY(8deg) translateY(0); }
+}
+@keyframes rightBannerLife {
+  0% { opacity: 0; transform: skewY(-8deg) translateY(3cqw); }
+  18% { opacity: .28; transform: skewY(-8deg) translateY(0); }
+  54% { opacity: .42; transform: skewY(-10deg) translateY(.4cqw); }
+  100% { opacity: .3; transform: skewY(-8deg) translateY(0); }
+}
+@keyframes vignetteLife { 0% { opacity: .9; } 30% { opacity: .2; } 70% { opacity: .35; } 100% { opacity: .75; } }
+@media (prefers-reduced-motion: reduce) {
+  .stage .scene, .stage .scene * { animation: none; }
+  .stage .scene { opacity: 1; }
+}

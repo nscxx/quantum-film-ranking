@@ -1,4 +1,4 @@
-import { createScoreEntry } from '@/db/order-race';
+import { createScoreSubmission } from '@/db/order-race';
 import { hasValidControlSession } from '@/lib/order-race/auth';
 
 export async function POST(request: Request) {
@@ -9,18 +9,23 @@ export async function POST(request: Request) {
     const body = (await request.json()) as {
       requestId?: unknown;
       provinceCode?: unknown;
-      packageCode?: unknown;
+      items?: unknown;
     };
-    const result = await createScoreEntry(
+    const result = await createScoreSubmission(
       typeof body.requestId === 'string' ? body.requestId : '',
       typeof body.provinceCode === 'string' ? body.provinceCode : '',
-      typeof body.packageCode === 'string' ? body.packageCode : '',
+      Array.isArray(body.items) ? body.items : [],
     );
     if (result.kind === 'invalid') {
       return Response.json({ ok: false, code: 'INVALID_ENTRY', message: result.message }, { status: 400 });
     }
     return Response.json(
-      { ok: true, event: result.event, idempotent: result.kind === 'existing' },
+      {
+        ok: true,
+        submission: result.submission,
+        displayEventId: result.displayEvent?.id ?? null,
+        idempotent: result.kind === 'existing',
+      },
       { status: result.kind === 'created' ? 201 : 200 },
     );
   } catch (error) {

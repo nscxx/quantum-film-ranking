@@ -1,4 +1,4 @@
-import { revokeScoreEvent } from '@/db/order-race';
+import { revokeScoreSubmission } from '@/db/order-race';
 import { hasValidControlSession } from '@/lib/order-race/auth';
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
@@ -7,14 +7,14 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   }
   try {
     const { id } = await context.params;
-    const result = await revokeScoreEvent(id);
+    const result = await revokeScoreSubmission(id);
     if (result.kind === 'invalid') {
       return Response.json({ ok: false, code: 'INVALID_EVENT', message: result.message }, { status: 400 });
     }
     if (result.kind === 'missing') {
       return Response.json({ ok: false, code: 'EVENT_NOT_FOUND', message: '这条积分记录不存在' }, { status: 404 });
     }
-    return Response.json({ ok: true, event: result.event, idempotent: result.kind === 'already_revoked' });
+    return Response.json({ ok: true, submission: result.submission, idempotent: result.kind === 'already_revoked' });
   } catch (error) {
     console.error('score_entry_revoke_failed', error);
     return Response.json({ ok: false, code: 'ENTRY_REVOKE_FAILED', message: '撤销失败，请稍后重试' }, { status: 503 });
