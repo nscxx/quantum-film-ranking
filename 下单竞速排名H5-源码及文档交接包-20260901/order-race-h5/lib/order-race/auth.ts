@@ -92,5 +92,15 @@ export async function hasValidControlSession(request: Request) {
 }
 
 export function secureCookieSuffix(request: Request) {
+  const forwarded = (
+    request.headers.get('x-original-proto') ??
+    request.headers.get('x-forwarded-proto') ??
+    ''
+  )
+    .split(',')[0]
+    ?.trim()
+    .toLowerCase();
+  if (forwarded === 'http') return '';
+  if (forwarded === 'https') return '; Secure';
   return new URL(request.url).protocol === 'https:' ? '; Secure' : '';
 }

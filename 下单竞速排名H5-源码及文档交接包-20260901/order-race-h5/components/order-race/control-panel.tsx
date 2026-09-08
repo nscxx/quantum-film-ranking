@@ -31,6 +31,7 @@ import {
   triggerBigCustomerCelebration,
 } from '@/lib/order-race/api-client';
 import type { RankingSnapshot } from '@/lib/order-race/types';
+import { createClientId } from '@/lib/order-race/id';
 
 type Notice = { tone: 'success' | 'error' | 'info'; message: string };
 type Quantities = Record<PackageCode, number>;
@@ -138,7 +139,7 @@ export function ControlPanel() {
     setLoading('entry'); setNotice(null);
     try {
       const result = await recordScore(
-        crypto.randomUUID(),
+        createClientId(),
         provinceCode,
         selectedItems.map((item) => ({ packageCode: item.code, quantity: item.quantity })),
       );

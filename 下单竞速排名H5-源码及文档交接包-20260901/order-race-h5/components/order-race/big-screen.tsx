@@ -9,6 +9,7 @@ import { ScreenAsset } from '@/components/order-race/screen-asset';
 import { fetchDisplayEvents, fetchRanking } from '@/lib/order-race/api-client';
 import { PACKAGE_RULES, PROVINCES, SCORE_COLOR_BANDS, getScoreBand } from '@/lib/order-race/config';
 import { expandDisplayEvent } from '@/lib/order-race/celebrations';
+import { createClientId } from '@/lib/order-race/id';
 import type { CelebrationEvent, PackageScore, ProvinceScore, RankingSnapshot } from '@/lib/order-race/types';
 
 const DISPLAY_CURSOR_KEY = 'quantum-film-display-cursor';
@@ -288,15 +289,6 @@ export function BigScreen({ preview = false }: { preview?: boolean }) {
 
   return (
     <main className="quantum-viewport">
-      {preview && <div style={{ position: 'fixed', zIndex: 500, top: 12, left: 12, padding: 12, background: '#07152f', color: 'white', border: '1px solid #70eaf5', borderRadius: 8 }}>
-        <strong>动效与声音验收 · 不录入积分</strong>
-        <p style={{ margin: '6px 0' }}>先点击大屏启动按钮，再选择效果。会播放正式 BGM 与对应庆祝音效。</p>
-        {(['score', 'milestone', 'top3', 'champion', 'bigCustomer', 'all'] as const).map((type, index) => <button key={type} disabled={!experienceStarted || celebrations.length > 0} style={{ marginRight: 8, padding: 8, borderRadius: 4, background: type === 'bigCustomer' ? '#f3c453' : '#70eaf5', color: '#07152f', opacity: !experienceStarted || celebrations.length > 0 ? .4 : 1 }} onClick={() => {
-          const id = crypto.randomUUID();
-          const events = expandDisplayEvent({ id, submissionId: id, cursor: 0, provinceCode: '440000', provinceName: type === 'bigCustomer' ? '杭州保通科技实业有限公司' : '广东省', packageSummary: 'A×2 · B×3', totalPoints: 770, scoreBefore: 630, scoreAfter: 1400, rankBefore: 4, rankAfter: 1, milestone: 1400, createdAt: new Date().toISOString(), eventKind: type === 'bigCustomer' ? 'bigCustomer' : 'score' });
-          setCelebrations(type === 'all' ? events : events.filter((event) => event.type === type));
-        }}>{['加分 · 2秒', '阶段 · 5秒', '前三 · 6秒', '冠军 · 20秒', '大客户 · 8秒', '完整连播'][index]}</button>)}
-      </div>}
       <div className="quantum-stage">
         <ScreenAsset name="bg-circuit" className="quantum-bg-circuit" alt="" />
         <div className="quantum-grid" aria-hidden="true" />
@@ -417,6 +409,15 @@ export function BigScreen({ preview = false }: { preview?: boolean }) {
           onStarted={() => setExperienceStarted(true)}
           onActiveReady={markCelebrationReady}
         />
+        {preview && <div style={{ position: 'absolute', zIndex: 500, top: 12, left: 12, padding: 12, background: '#07152f', color: 'white', border: '1px solid #70eaf5', borderRadius: 8, pointerEvents: 'auto' }}>
+          <strong>动效与声音验收 · 不录入积分</strong>
+          <p style={{ margin: '6px 0' }}>先点击大屏启动按钮，再选择效果。会播放正式 BGM 与对应庆祝音效。</p>
+          {(['score', 'milestone', 'top3', 'champion', 'bigCustomer', 'all'] as const).map((type, index) => <button key={type} disabled={!experienceStarted} style={{ marginRight: 8, marginBottom: 6, padding: 8, borderRadius: 4, background: type === 'bigCustomer' ? '#f3c453' : '#70eaf5', color: '#07152f', opacity: !experienceStarted ? .4 : 1, pointerEvents: 'auto' }} onClick={() => {
+            const id = createClientId();
+            const events = expandDisplayEvent({ id, submissionId: id, cursor: 0, provinceCode: '440000', provinceName: type === 'bigCustomer' ? '杭州保通科技实业有限公司' : '广东省', packageSummary: 'A×2 · B×3', totalPoints: 770, scoreBefore: 630, scoreAfter: 1400, rankBefore: 4, rankAfter: 1, milestone: 1400, createdAt: new Date().toISOString(), eventKind: type === 'bigCustomer' ? 'bigCustomer' : 'score' });
+            setCelebrations(type === 'all' ? events : events.filter((event) => event.type === type));
+          }}>{['加分 · 2秒', '阶段 · 5秒', '前三 · 6秒', '冠军 · 20秒', '大客户 · 8秒', '完整连播'][index]}</button>)}
+        </div>}
       </div>
     </main>
   );
