@@ -29,7 +29,7 @@ import {
   fetchRanking,
   loginControl,
   recordScore,
-  revokeAllScores,
+  clearAllScores,
   revokeScore,
   savePackagePoints,
   triggerBigCustomerCelebration,
@@ -236,14 +236,14 @@ export function ControlPanel() {
     setLoading('reset');
     setResetError(null);
     try {
-      const result = await revokeAllScores(resetPassword);
+      const result = await clearAllScores(resetPassword);
       setResetOpen(false);
       setResetPassword('');
       setNotice({
         tone: 'success',
-        message: result.revokedCount
-          ? `已一键撤销 ${result.revokedCount} 条有效积分单，大屏分数已归零。录入日志仍保留，导出明细会显示为「已撤销」。`
-          : '当前没有有效积分，无需撤销。录入日志已保留。',
+        message: result.clearedCount
+          ? `已彻底清零 ${result.clearedCount} 条积分单和大屏动效记录。套餐分值、省份数量未改动。`
+          : '当前没有积分记录，无需清零。套餐分值、省份数量未改动。',
       });
       await refresh();
     } catch (error) {
@@ -252,7 +252,7 @@ export function ControlPanel() {
         setResetOpen(false);
         setNotice({ tone: 'error', message: error.message });
       } else {
-        setResetError(error instanceof Error ? error.message : '全部撤销失败');
+        setResetError(error instanceof Error ? error.message : '全部清零失败');
       }
     } finally { setLoading(null); }
   }
@@ -308,12 +308,12 @@ export function ControlPanel() {
               onClick={(event) => event.stopPropagation()}
               role="dialog"
             >
-              <button aria-label="关闭全部撤销确认" className="score-reset-close" disabled={loading === 'reset'} onClick={closeResetDialog} type="button">
+              <button aria-label="关闭全部清零确认" className="score-reset-close" disabled={loading === 'reset'} onClick={closeResetDialog} type="button">
                 <X />
               </button>
               <div className="score-reset-mark"><ShieldAlert /></div>
-              <h2 id="score-reset-title">一键撤销全部积分</h2>
-              <p>将把当前有效积分全部标记为已撤销，大屏分数归零。录入日志会保留，导出明细里这些记录会显示为「已撤销」。之后新登记的积分会重新计入排名。</p>
+              <h2 id="score-reset-title">彻底清零全部积分</h2>
+              <p>将删除全部省份积分和录入记录，大屏分数归零。<br />此操作不可恢复。</p>
               <form onSubmit={submitReset}>
                 <label htmlFor="reset-password">再次输入活动口令</label>
                 <div>
@@ -323,7 +323,7 @@ export function ControlPanel() {
                     autoFocus
                     id="reset-password"
                     onChange={(event) => setResetPassword(event.target.value)}
-                    placeholder="输入活动口令后确认撤销"
+                    placeholder="输入活动口令后确认清零"
                     type="password"
                     value={resetPassword}
                   />
@@ -331,7 +331,7 @@ export function ControlPanel() {
                 <div className="score-reset-actions">
                   <button disabled={loading === 'reset'} onClick={closeResetDialog} type="button">取消</button>
                   <button disabled={loading === 'reset' || !resetPassword} type="submit">
-                    {loading === 'reset' ? '正在撤销' : '确认全部撤销'}
+                    {loading === 'reset' ? '正在清零' : '确认全部清零'}
                   </button>
                 </div>
                 {resetError && <div className="score-reset-error">{resetError}</div>}
@@ -408,7 +408,7 @@ export function ControlPanel() {
             <header>
               <h2>最近录入</h2>
               <button className="score-reset-button" disabled={loading === 'reset'} onClick={openResetDialog} type="button">
-                <Eraser />全部撤销
+                <Eraser />全部清零
               </button>
             </header>
             <div>

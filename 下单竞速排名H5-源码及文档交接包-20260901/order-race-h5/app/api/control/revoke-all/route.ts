@@ -1,4 +1,4 @@
-import { revokeAllScoreSubmissions } from '@/db/order-race';
+import { clearAllScoreRecords } from '@/db/order-race';
 import { hasValidControlSession, verifyControlPassword } from '@/lib/order-race/auth';
 
 export async function POST(request: Request) {
@@ -11,16 +11,16 @@ export async function POST(request: Request) {
     if (!verifyControlPassword(password)) {
       return Response.json({ ok: false, code: 'INVALID_PASSWORD', message: '活动口令不正确' }, { status: 403 });
     }
-    const result = await revokeAllScoreSubmissions();
+    const result = await clearAllScoreRecords();
     return Response.json({ ok: true, ...result });
   } catch (error) {
     const unconfigured = error instanceof Error && error.message === 'CONTROL_AUTH_NOT_CONFIGURED';
-    console.error('score_revoke_all_failed', error);
+    console.error('score_clear_all_failed', error);
     return Response.json(
       {
         ok: false,
-        code: unconfigured ? 'AUTH_NOT_CONFIGURED' : 'REVOKE_ALL_FAILED',
-        message: unconfigured ? '后台口令尚未配置' : '全部撤销失败，请稍后重试',
+        code: unconfigured ? 'AUTH_NOT_CONFIGURED' : 'CLEAR_ALL_FAILED',
+        message: unconfigured ? '后台口令尚未配置' : '全部清零失败，请稍后重试',
       },
       { status: 503 },
     );

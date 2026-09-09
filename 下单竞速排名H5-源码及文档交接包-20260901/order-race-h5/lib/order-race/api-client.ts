@@ -69,8 +69,8 @@ export function fetchDisplayEvents(after: number, signal?: AbortSignal) {
   );
 }
 
-export function revokeAllScores(password: string) {
-  return requestJson<{ ok: true; revokedCount: number }>('/api/control/revoke-all', {
+export function clearAllScores(password: string) {
+  return requestJson<{ ok: true; clearedCount: number }>('/api/control/revoke-all', {
     method: 'POST',
     body: JSON.stringify({ password }),
   });
