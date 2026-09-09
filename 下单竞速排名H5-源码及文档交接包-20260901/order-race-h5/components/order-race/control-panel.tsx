@@ -6,15 +6,18 @@ import {
   ArrowUpRight,
   CheckCircle2,
   Download,
+  Eraser,
   KeyRound,
   Minus,
   Plus,
   RotateCcw,
   Save,
   Settings2,
+  ShieldAlert,
   ShieldCheck,
   Sparkles,
   Star,
+  X,
   Zap,
 } from 'lucide-react';
 import { PACKAGE_RULES, PROVINCES } from '@/lib/order-race/config';
@@ -26,6 +29,7 @@ import {
   fetchRanking,
   loginControl,
   recordScore,
+  revokeAllScores,
   revokeScore,
   savePackagePoints,
   triggerBigCustomerCelebration,
@@ -72,8 +76,11 @@ export function ControlPanel() {
     B: String(PACKAGE_RULES[1].points),
     C: String(PACKAGE_RULES[2].points),
   });
-  const [loading, setLoading] = useState<'login' | 'entry' | 'revoke' | 'package' | 'export' | 'bigCustomer' | null>(null);
+  const [loading, setLoading] = useState<'login' | 'entry' | 'revoke' | 'package' | 'export' | 'reset' | 'bigCustomer' | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetError, setResetError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -96,6 +103,15 @@ export function ControlPanel() {
     const timer = setInterval(() => void refresh(), 2000);
     return () => { alive = false; clearInterval(timer); };
   }, [refresh]);
+
+  useEffect(() => {
+    if (!resetOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeResetDialog();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [resetOpen, loading]);
 
   const selectedProvince = useMemo(
     () => PROVINCES.find((province) => province.code === provinceCode) ?? PROVINCES[0],
@@ -201,6 +217,46 @@ export function ControlPanel() {
     } finally { setLoading(null); }
   }
 
+  function openResetDialog() {
+    setResetPassword('');
+    setResetError(null);
+    setResetOpen(true);
+  }
+
+  function closeResetDialog() {
+    if (loading === 'reset') return;
+    setResetOpen(false);
+    setResetPassword('');
+    setResetError(null);
+  }
+
+  async function submitReset(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!resetPassword) return;
+    setLoading('reset');
+    setResetError(null);
+    try {
+      const result = await revokeAllScores(resetPassword);
+      setResetOpen(false);
+      setResetPassword('');
+      setNotice({
+        tone: 'success',
+        message: result.revokedCount
+          ? `已一键撤销 ${result.revokedCount} 条有效积分单，大屏分数已归零。录入日志仍保留，导出明细会显示为「已撤销」。`
+          : '当前没有有效积分，无需撤销。录入日志已保留。',
+      });
+      await refresh();
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        setAuthenticated(false);
+        setResetOpen(false);
+        setNotice({ tone: 'error', message: error.message });
+      } else {
+        setResetError(error instanceof Error ? error.message : '全部撤销失败');
+      }
+    } finally { setLoading(null); }
+  }
+
   async function launchBigCustomer() {
     if (!window.confirm('确认在现场大屏播放“杭州保通科技实业有限公司”大客户订单特效？')) return;
     setLoading('bigCustomer'); setNotice(null);
@@ -243,6 +299,46 @@ export function ControlPanel() {
           <div><span><Zap fill="currentColor" /></span><p>量子膜积分控制台<small>省份 × 多套餐批量录入</small></p></div>
         </header>
         {notice && <div className={`score-control-notice ${notice.tone}`}>{notice.tone === 'success' && <CheckCircle2 />}{notice.message}</div>}
+        {resetOpen && (
+          <div className="score-reset-overlay" onClick={closeResetDialog} role="presentation">
+            <div
+              aria-labelledby="score-reset-title"
+              aria-modal="true"
+              className="score-reset-dialog"
+              onClick={(event) => event.stopPropagation()}
+              role="dialog"
+            >
+              <button aria-label="关闭全部撤销确认" className="score-reset-close" disabled={loading === 'reset'} onClick={closeResetDialog} type="button">
+                <X />
+              </button>
+              <div className="score-reset-mark"><ShieldAlert /></div>
+              <h2 id="score-reset-title">一键撤销全部积分</h2>
+              <p>将把当前有效积分全部标记为已撤销，大屏分数归零。录入日志会保留，导出明细里这些记录会显示为「已撤销」。之后新登记的积分会重新计入排名。</p>
+              <form onSubmit={submitReset}>
+                <label htmlFor="reset-password">再次输入活动口令</label>
+                <div>
+                  <KeyRound />
+                  <input
+                    autoComplete="off"
+                    autoFocus
+                    id="reset-password"
+                    onChange={(event) => setResetPassword(event.target.value)}
+                    placeholder="输入活动口令后确认撤销"
+                    type="password"
+                    value={resetPassword}
+                  />
+                </div>
+                <div className="score-reset-actions">
+                  <button disabled={loading === 'reset'} onClick={closeResetDialog} type="button">取消</button>
+                  <button disabled={loading === 'reset' || !resetPassword} type="submit">
+                    {loading === 'reset' ? '正在撤销' : '确认全部撤销'}
+                  </button>
+                </div>
+                {resetError && <div className="score-reset-error">{resetError}</div>}
+              </form>
+            </div>
+          </div>
+        )}
 
         <div className="score-control-workspace">
           <section className="score-entry-card">
@@ -299,12 +395,22 @@ export function ControlPanel() {
           </section>
 
           <section className="score-control-panel score-ranking-panel">
-            <header><h2>当前省份排名</h2><span>每2秒刷新</span></header>
+            <header>
+              <h2>当前省份排名</h2>
+              <button className="score-export-button" disabled={loading === 'export'} onClick={() => void exportScores()} type="button">
+                <Download />{loading === 'export' ? '正在导出' : '导出明细'}
+              </button>
+            </header>
             <div>{snapshot?.provinces.map((province) => <article key={province.code}><b>{province.rank}</b><span>{province.name}</span><i><em style={{ width: `${Math.max(0, province.score / Math.max(snapshot.provinces[0]?.score ?? 1, 1) * 100)}%` }} /></i><strong>{province.score.toLocaleString()}</strong></article>)}</div>
           </section>
 
           <section className="score-control-panel score-recent-panel">
-            <header><h2>最近录入</h2><span>按整单撤销</span></header>
+            <header>
+              <h2>最近录入</h2>
+              <button className="score-reset-button" disabled={loading === 'reset'} onClick={openResetDialog} type="button">
+                <Eraser />全部撤销
+              </button>
+            </header>
             <div>
               {snapshot?.recentSubmissions.map((item) => (
                 <article className={item.revokedAt ? 'revoked' : ''} key={item.id}>
@@ -329,9 +435,6 @@ export function ControlPanel() {
             ))}</div>
           </section>
         </div>
-        <button className="score-export-button" disabled={loading === 'export'} onClick={() => void exportScores()} type="button">
-          <Download />{loading === 'export' ? '正在导出' : '导出明细'}
-        </button>
         <section className="score-big-customer-launch">
           <div><Star fill="currentColor" /><span><strong>现场专用 · 大客户订单</strong><small>杭州保通科技实业有限公司</small></span></div>
           <button disabled={loading === 'bigCustomer'} onClick={() => void launchBigCustomer()} type="button">

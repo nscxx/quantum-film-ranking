@@ -546,6 +546,19 @@ export async function getDisplayEvents(after: number, limit = 50) {
   };
 }
 
+export async function revokeAllScoreSubmissions() {
+  await ensureOrderRaceSchema();
+  const db = getD1();
+  const active = await db.prepare(
+    'SELECT COUNT(*) AS count FROM score_submissions WHERE revoked_at IS NULL',
+  ).first<{ count: number }>();
+  await db.batch([
+    db.prepare('UPDATE score_submissions SET revoked_at = CURRENT_TIMESTAMP WHERE revoked_at IS NULL'),
+    db.prepare('UPDATE order_events SET revoked_at = CURRENT_TIMESTAMP WHERE revoked_at IS NULL'),
+  ]);
+  return { revokedCount: Number(active?.count ?? 0) };
+}
+
 export async function updatePackagePoints(packageCode: string, points: number) {
   await ensureOrderRaceSchema();
   const rule = getPackageRule(packageCode);
