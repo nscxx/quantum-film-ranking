@@ -313,7 +313,7 @@ export function ControlPanel() {
               </button>
               <div className="score-reset-mark"><ShieldAlert /></div>
               <h2 id="score-reset-title">彻底清零全部积分</h2>
-              <p>将删除全部省份积分和录入记录，大屏分数归零。<br />此操作不可恢复。</p>
+              <p>将删除全部省份积分和录入记录，大屏分数归零。此操作不可恢复。</p>
               <form onSubmit={submitReset}>
                 <label htmlFor="reset-password">再次输入活动口令</label>
                 <div>
