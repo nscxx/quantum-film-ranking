@@ -24,7 +24,7 @@ export function BigCustomerCelebration({ event }: { event: Pick<CelebrationEvent
       <div className={styles.copy}>
         <small>重磅喜报</small>
         <h2>杭州保通科技实业有限公司</h2>
-        <strong>大客户订单 <b>·</b> 荣耀达成</strong>
+        <strong><span>天穹漆面膜 3000 卷</span></strong>
         <p><i />感谢信任&nbsp;&nbsp;携手共赢<i /></p>
       </div>
     </section>
