@@ -90,11 +90,11 @@ export function triggerBigCustomerCelebration() {
 }
 
 function fileNameFromDisposition(value: string | null) {
-  if (!value) return '量子膜积分导出.xls';
+  if (!value) return '量子膜积分导出.xlsx';
   const utf8 = value.match(/filename\*=UTF-8''([^;]+)/i);
   if (utf8?.[1]) return decodeURIComponent(utf8[1]);
   const ascii = value.match(/filename="([^"]+)"/i);
-  return ascii?.[1] ?? '量子膜积分导出.xls';
+  return ascii?.[1] ?? '量子膜积分导出.xlsx';
 }
 
 export async function downloadScoreExport() {
