@@ -108,7 +108,7 @@ export async function downloadScoreExport() {
   const link = document.createElement('a');
   link.href = url;
   link.download = fileNameFromDisposition(response.headers.get('Content-Disposition'));
-  document.body.append(link);
+  document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
